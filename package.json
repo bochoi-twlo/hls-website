@@ -1,0 +1,21 @@
+{
+  "name": "hls-website",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "twilio-run",
+    "deploy": "twilio-run deploy"
+  },
+  "dependencies": {
+    "twilio": "3.75",
+    "@twilio/runtime-handler": "1.2.2"
+  },
+  "devDependencies": {
+    "twilio-run": "3.4.1",
+    "twilio-flex-token-validator": "1.5.6"
+  },
+  "engines": {
+    "node": "14"
+  }
+}
