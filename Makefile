@@ -63,6 +63,19 @@ get-service-sid:
 	  echo "Service named $(SERVERLESS_NAME) is not deployed!!!"; \
 	fi
 
+
+get-environment-sid: get-service-sid
+	@if [[ -z "$(SERVICE_SID)" ]]; then \
+	  echo "Service named $(SERVERLESS_NAME) is not deployed!!!"; \
+	fi
+	$(eval ENVIRONMENT_SID := $(shell twilio api:serverless:v1:services:environments:list --service-sid $(SERVICE_SID) -o=json \
+	| jq --raw-output '.[0].sid'))
+	@echo "ENVIRONMENT_SID=$(ENVIRONMENT_SID)"
+	@if [[ -z "$(ENVIRONMENT_SID)" ]]; then \
+	  echo "Environment for service named $(SERVERLESS_NAME) is not found!!!"; \
+	fi
+
+
 confirm-delete:
 	@read -p "Delete $(SERVERLESS_NAME) functions service? [y/n] " answer && [ $${answer:-N} = y ]
 
@@ -75,27 +88,38 @@ delete: fetch-service-sid confirm-delete
 	@echo ---------- "Deleted $(SERVERLESS_NAME) Functions Service"
 
 
-build:
+clean:
+	rm -f -r app/build
+
+
+build: clean
 	cd app && npm install
 	cd app && npm run build
-
-deploy-serverless:
-	npm install
-	twilio serverless:deploy --runtime node14
+	cp -r app/build/* assets/
 
 
 service-editable: get-service-sid
 	twilio api:serverless:v1:services:update --sid=$(SERVICE_SID) --ui-editable -o=json
 
 
-deploy: deploy-serverless make-editable
-	@echo ---------- "Completed deploy of $(SERVERLESS_NAME)"
+deploy: build service-editable
+	npm install
+	twilio serverless:deploy --runtime node14
 
 
-run:
+run-frontend:
+	cd app && npm install
+	cd app && npm run start
+
+
+run-backend:
 	npm install
 	if [[ ! -f .env.localhost ]]; then \
       echo ".env.localhost needs to be copied from .env and value set!!!"; \
     else \
 	  twilio serverless:start --env=.env.localhost; \
 	fi;
+
+
+tail-log: get-environment-sid
+	twilio serverless:logs --service-sid=$(SERVICE_SID) --environment=$(ENVIRONMENT_SID) --tail
