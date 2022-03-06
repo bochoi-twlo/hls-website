@@ -20,6 +20,7 @@ endif
 # ---------- variables
 BLUEPRINT_NAME   := $(shell basename `pwd`)
 SERVICE_NAME     := $(BLUEPRINT_NAME)
+STUDIO_FLOW_NAME := BJC
 GIT_REPO_URL     := $(shell git config --get remote.origin.url)
 INSTALLER_NAME   := hls-website-installer
 CPU_HARDWARE     := $(shell uname -m)
@@ -34,6 +35,7 @@ $(info TWILIO_ACCOUNT_NAME: $(shell twilio api:core:accounts:fetch --sid=$(TWILI
 $(info TWILIO_ACCOUNT_SID : $(TWILIO_ACCOUNT_SID))
 $(info TWILIO_AUTH_TOKEN  : $(shell echo $(TWILIO_AUTH_TOKEN) | sed 's/./*/g'))
 $(info SERVICE_NAME       : $(SERVICE_NAME))
+$(info STUDIO_FLOW_NAME   : $(STUDIO_FLOW_NAME))
 $(info ================================================================================)
 
 
@@ -79,12 +81,29 @@ get-service-sid:
 get-environment-sid: get-service-sid
 	$(eval ENVIRONMENT_SID := $(shell twilio api:serverless:v1:services:environments:list --service-sid $(SERVICE_SID) -o=json \
 	| jq --raw-output '.[0].sid'))
+	$(eval ENVIRONMENT_NAME := $(shell twilio api:serverless:v1:services:environments:list --service-sid $(SERVICE_SID) -o=json \
+	| jq --raw-output '.[0].uniqueName'))
+	$(eval ENVIRONMENT_DOMAIN := $(shell twilio api:serverless:v1:services:environments:list --service-sid $(SERVICE_SID) -o=json \
+	| jq --raw-output '.[0].domainName'))
 	@if [[ ! -z "$(ENVIRONMENT_SID)" ]]; then \
 	  echo "ENVIRONMENT_SID=$(ENVIRONMENT_SID)"; \
+	  echo "ENVIRONMENT_NAME=$(ENVIRONMENT_NAME)"; \
+	  echo "ENVIRONMENT_DOMAIN=$(ENVIRONMENT_DOMAIN)"; \
 	else \
 	  echo "$@: Environment for service named $(SERVICE_NAME) is not found!!! aborting..."; \
 	fi
 	@[[ ! -z "$(ENVIRONMENT_SID)" ]]
+
+
+get-flow-sid:
+	$(eval STUDIO_FLOW_SID := $(shell twilio api:studio:v2:flows:list -o=json \
+	| jq --raw-output '.[] | select(.friendlyName == "$(STUDIO_FLOW_NAME)") | .sid'))
+	@if [[ ! -z "$(STUDIO_FLOW_SID)" ]]; then \
+      echo "STUDIO_FLOW_SID=$(STUDIO_FLOW_SID)"; \
+    else \
+	  echo "$@: Studio flow named $(STUDIO_FLOW_NAME) is not deployed!!! aborting..."; \
+	fi
+	@[[ ! -z "$(STUDIO_FLOW_SID)" ]]
 
 
 get-flex-configuration:
@@ -131,12 +150,13 @@ make-service-editable: get-service-sid
 	twilio api:serverless:v1:services:update --sid=$(SERVICE_SID) --ui-editable -o=json
 
 
-deploy:
+deploy-service:
 	@if [[ ! -f .env.localhost ]]; then \
       echo ".env.localhost needs to be copied from .env and value set!!! aborting..."; \
     fi
 	@[[ -f .env.localhost ]]
 	twilio serverless:deploy --runtime node14 --env=.env.localhost
+
 	@echo If initial deployment, also execute "make make-service-editable"
 
 
@@ -145,10 +165,20 @@ confirm-delete:
 	@read -p "Delete $(SERVICE_NAME) service? [y/n] " answer && [[ $${answer:-N} = y ]]
 
 
-undeploy: get-service-sid confirm-delete
+undeploy-service: get-service-sid confirm-delete
 	twilio api:serverless:v1:services:remove --sid $(SERVICE_SID)
 	rm -f .twiliodeployinfo
 
+
+deploy-all: build deploy-service get-flex-web-flow-sid get-flow-sid
+	@echo TODO replace ACCOUNT_SID & flex Flow SID in assets/webchat-appConfig.js
+
+	twilio api:flex:v1:flex-flows:update --sid $(FLEX_WEB_FLOW_SID) \
+	--integration-type studio --integration.retry-count 3 --integration.flow-sid $(STUDIO_FLOW_SID)
+
+
+package-flow: get-flow-sid
+	assets/package-studio-flow-template.private.sh
 
 run-app:
 	cd app && npm install
