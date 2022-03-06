@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HLS EHR Installer</title>
+  <title>HLS Website Installer</title>
   <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
   <link rel="stylesheet" href="https://unpkg.com/normalize.css/normalize.css">
   <link rel="stylesheet" href="https://unpkg.com/milligram/dist/milligram.min.css">
   <link rel="stylesheet" href="installer.css">
 </head>
 <body>
-<h1>Installer for <a id="application-name">HLS EHR</a></h1>
+<h1>Installer for <a id="application-name">HLS Website</a></h1>
 <div id="configure-form">
   <form>
 
@@ -77,49 +77,21 @@
     <!----End of clone  ---->
     <div class="form-section">
       <div class="deployable-loader"></div>
-      <div class="form-group" style="display: none;" >
-        <div id="service-deploy" style="display: none;" class="deployer">
-          <a class="button" id="service-deploy-button" onclick="deployService(event);">Deploy HLS-EHR Service</a>
-          <div id="service-loader" style="display: none;"></div>
-        </div>
-        <div id="service-deploying" style="display: none;" class="deployer">
-          <h4>HLS-EHR service is being deployed.</h4>
-          <p>
-          <div class="lds-ellipsis">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-          </div>
-          <div class="ellipses-text">Please wait, this may take up to a minute.</div>
-          </p>
-        </div>
-        <div id="service-deployed" style="display: none;" class="deployer">
-          <h4><span class="checkmark">&#10003;</span> HLS-EHR service is deployed</h4>
-          <a id="service-open" class="button button-outline" href="" target="_blank">Open Administration Page</a>
-          <a id="service-console-open" class="button button-outline" href="" target="_blank">Open Service</a>
-        </div>
-      </div>
-
       <div class="form-group">
-        <hr>
-        <div id="ehr-deploy" style="display: none;" class="deployer">
-          <div id="ehr-deployed" style="display: none;" class="deployer">
-            <h4><span class="checkmark">&#10003;</span> EHR is deployed</h4>
-            <a id="ehr-adjust-date-button" class="button" onclick="adjustEHRDate(event);">Adjust Appointment Dates</a>
-            <span id="ehr-appointment-week"></span>
+        <div id="service-deploy" style="display: none;" class="deployer">
+          <div id="service-deployed" style="display: none;" class="deployer">
+            <h4><span class="checkmark">&#10003;</span> Service is deployed</h4>
             <span>
-              <a id="ehr-open-ehr"   class="button button-outline" href="" target="_blank">Open EHR</a> (admin/pass)
-              <a id="ehr-open-mirth" class="button button-outline" href="" target="_blank">Open Mirth</a> (admin/admin)
-              <a id="ehr-open-ie"    class="button button-outline" href="" target="_blank">Open IE</a> (admin/admin)
+              <a id="service-open" class="button button-outline" href="" target="_blank">Open Administration Page</a>
+              <a id="service-console-open" class="button button-outline" href="" target="_blank">Open Service</a>
             </span>
-            <span id="ehr-credentials"></span>
-            <br>
-            <pre id="ehr-information" style="font-size: small"></pre>
           </div>
-          <a id="ehr-deploy-button" class="button" onclick="deployEHR(event);">Deploy EHR to Localhost</a>
-          <a id="ehr-remove-button" class="button" onclick="removeEHR(event);">Remove EHR on Localhost</a>
-          <div id="ehr-deploying" style="display: none;" class="deployer">
+          <a class="button" id="service-deploy-button"   onclick="deployService(event, 'DEPLOY');">Deploy Service</a>
+          <a class="button" id="service-redeploy-button" onclick="deployService(event, 'REDEPLOY');">Redeploy Service</a>
+          <a class="button" id="service-undeploy-button" onclick="deployService(event, 'UNDEPLOY');">Remove Service</a>
+          <div id="service-deploying" style="display: none;" class="deployer">
+            <h4>Service is being deployed.</h4>
+            <p>
             <div class="lds-ellipsis">
               <div></div>
               <div></div>

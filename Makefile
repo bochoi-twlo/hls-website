@@ -1,49 +1,59 @@
 # --------------------------------------------------------------------------------------------------------------
 # FOR DEVELOPER USE ONLY!!!
 # --------------------------------------------------------------------------------------------------------------
-SERVERLESS_NAME := $(shell basename `pwd`)
-GIT_REPO_URL     := $(shell git config --get remote.origin.url)
-INSTALLER_NAME   := hls-website-installer
 
-# ---------- acquire twilio credentials from environment variables
+# ---------- check twilio credentials from environment variables
+# when below 2 variables are set, it will be the 'active' profile of twilio cli
 ifndef TWILIO_ACCOUNT_SID
-$(info TWILIO_ACCOUNT_SID environment variable is not set)
 $(info Lookup your "ACCOUNT SID" at https://console.twilio.com/)
-TWILIO_ACCOUNT_SID := $(shell read -p "Enter TWILIO_ACCOUNT_SID=" input && echo $$input)
-$(info )
+$(info execute in your terminal, 'export TWILIO_ACCOUNT_SID=AC********************************')
+$(error TWILIO_ACCOUNT_SID environment variable is not set)
 endif
 
 ifndef TWILIO_AUTH_TOKEN
-$(info TWILIO_AUTH_TOKEN environment variable is not set)
 $(info Lookup your "AUTH TOKEN" at https://console.twilio.com/)
-TWILIO_AUTH_TOKEN := $(shell read -p "Enter TWILIO_AUTH_TOKEN=" input && echo $$input)
-$(info )
+$(info execute in your terminal, 'export TWILIO_AUTH_TOKEN=********************************')
+$(info TWILIO_AUTH_TOKEN environment variable is not set)
 endif
 
 
-$(info SERVERLESS_NAME    : $(SERVERLESS_NAME))
+# ---------- variables
+BLUEPRINT_NAME   := $(shell basename `pwd`)
+SERVICE_NAME     := $(BLUEPRINT_NAME)
+GIT_REPO_URL     := $(shell git config --get remote.origin.url)
+INSTALLER_NAME   := hls-website-installer
+CPU_HARDWARE     := $(shell uname -m)
+DOCKER_EMULATION := $(shell [[ `uname -m` == "arm64" ]] && echo --platform linux/amd64)
+$(info ================================================================================)
+$(info BLUEPRINT_NAME     : $(BLUEPRINT_NAME))
 $(info GIT_REPO_URL       : $(GIT_REPO_URL))
 $(info INSTALLER_NAME     : $(INSTALLER_NAME))
+$(info CPU_HARDWARE       : $(shell uname -m))
+$(info DOCKER_EMULATION   : $(DOCKER_EMULATION))
 $(info TWILIO_ACCOUNT_NAME: $(shell twilio api:core:accounts:fetch --sid=$(TWILIO_ACCOUNT_SID) --no-header --properties=friendlyName))
 $(info TWILIO_ACCOUNT_SID : $(TWILIO_ACCOUNT_SID))
 $(info TWILIO_AUTH_TOKEN  : $(shell echo $(TWILIO_AUTH_TOKEN) | sed 's/./*/g'))
+$(info SERVICE_NAME       : $(SERVICE_NAME))
+$(info ================================================================================)
+
 
 targets:
-	@echo Make targets:
+	@echo ----- avaiable make targets:
 	@grep '^[A-Za-z0-9\-]*:' Makefile | cut -d ':' -f 1 | sort
 
 
 installer-build-github:
-	docker build --tag $(INSTALLER_NAME) --no-cache $(GIT_REPO_URL)#main
+	docker build --tag $(INSTALLER_NAME) $(DOCKER_EMULATION) --no-cache $(GIT_REPO_URL)#main
 
 
 installer-build-local:
-	docker build --tag $(INSTALLER_NAME) --no-cache .
+	docker build --tag $(INSTALLER_NAME) --no-cache $(DOCKER_EMULATION) .
 
 
 installer-run:
-	docker run --name $(INSTALLER_NAME) --rm --publish 3000:3000  \
-	--env ACCOUNT_SID=$(TWILIO_ACCOUNT_SID) --env AUTH_TOKEN=$(TWILIO_ACCOUNT_SID) \
+	$(eval PLATFORM := $(shell ))
+	docker run --name $(INSTALLER_NAME) --rm --publish 3000:3000 $(DOCKER_EMULATION) \
+	--env ACCOUNT_SID=$(TWILIO_ACCOUNT_SID) --env AUTH_TOKEN=$(TWILIO_AUTH_TOKEN) \
 	--interactive --tty $(INSTALLER_NAME)
 
 
@@ -57,68 +67,101 @@ installer-open:
 
 get-service-sid:
 	$(eval SERVICE_SID := $(shell twilio api:serverless:v1:services:list -o=json \
-	| jq --raw-output '.[] | select(.friendlyName == "$(SERVERLESS_NAME)") | .sid'))
-	@echo "SERVICE_SID=$(SERVICE_SID)"
-	@if [[ -z "$(SERVICE_SID)" ]]; then \
-	  echo "Service named $(SERVERLESS_NAME) is not deployed!!!"; \
+	| jq --raw-output '.[] | select(.friendlyName == "$(SERVICE_NAME)") | .sid'))
+	@if [[ ! -z "$(SERVICE_SID)" ]]; then \
+      echo "SERVICE_SID=$(SERVICE_SID)"; \
+    else \
+	  echo "$@: Service named $(SERVICE_NAME) is not deployed!!! aborting..."; \
 	fi
+	@[[ ! -z "$(SERVICE_SID)" ]]
 
 
 get-environment-sid: get-service-sid
-	@if [[ -z "$(SERVICE_SID)" ]]; then \
-	  echo "Service named $(SERVERLESS_NAME) is not deployed!!!"; \
-	fi
 	$(eval ENVIRONMENT_SID := $(shell twilio api:serverless:v1:services:environments:list --service-sid $(SERVICE_SID) -o=json \
 	| jq --raw-output '.[0].sid'))
-	@echo "ENVIRONMENT_SID=$(ENVIRONMENT_SID)"
-	@if [[ -z "$(ENVIRONMENT_SID)" ]]; then \
-	  echo "Environment for service named $(SERVERLESS_NAME) is not found!!!"; \
+	@if [[ ! -z "$(ENVIRONMENT_SID)" ]]; then \
+	  echo "ENVIRONMENT_SID=$(ENVIRONMENT_SID)"; \
+	else \
+	  echo "$@: Environment for service named $(SERVICE_NAME) is not found!!! aborting..."; \
 	fi
+	@[[ ! -z "$(ENVIRONMENT_SID)" ]]
 
 
-confirm-delete:
-	@read -p "Delete $(SERVERLESS_NAME) functions service? [y/n] " answer && [ $${answer:-N} = y ]
+get-flex-configuration:
+	twilio api:flex:v1:configuration:fetch -o=json
 
 
-delete: fetch-service-sid confirm-delete
-	@curl -X DELETE https://serverless.twilio.com/v1/Services/$(SERVICE_SID) \
-	--silent --user $(TWILIO_ACCOUNT_SID):$(TWILIO_AUTH_TOKEN) | jq .
+get-flex-sid:
+	$(eval FLEX_SID := $(shell twilio api:flex:v1:configuration:fetch -o=json \
+	| jq '.[0].flexServiceInstanceSid'))
+	@if [[ ! -z "$(FLEX_SID)" ]]; then \
+	  echo "FLEX_SID=$(FLEX_SID)"; \
+	else \
+	  echo "$@: Flex instance not found in Twilio account $(TWILIO_ACCOUNT_NAME)!!! aborting..."; \
+	fi
+	@[[ ! -z "$(FLEX_SID)" ]]
 
-	rm -f .twiliodeployinfo
-	@echo ---------- "Deleted $(SERVERLESS_NAME) Functions Service"
+
+get-flex-web-flow-sid:
+	$(eval FLEX_WEB_FLOW_SID := $(shell twilio api:flex:v1:flex-flows:list -o=json \
+	| jq --raw-output '.[] | select(.channelType == "web") | .sid'))
+	@if [[ ! -z "$(FLEX_WEB_FLOW_SID)" ]]; then \
+	  echo "FLEX_WEB_FLOW_SID=$(FLEX_WEB_FLOW_SID)"; \
+	else \
+	  echo "$@: Webchat Flex flow not found!!! aborting..."; \
+	fi
+	@[[ ! -z "$(FLEX_WEB_FLOW_SID)" ]]
 
 
 clean:
+	@echo "remove react build files/directory"
 	rm -f -r app/build
+	@echo "remove react build files in assets"
+	git ls-files --others --exclude-standard | grep "^assets" | xargs rm -v
 
 
 build: clean
 	cd app && npm install
 	cd app && npm run build
+	@echo "copy react build files to assets"
 	cp -r app/build/* assets/
 
 
-service-editable: get-service-sid
+make-service-editable: get-service-sid
 	twilio api:serverless:v1:services:update --sid=$(SERVICE_SID) --ui-editable -o=json
 
 
-deploy: build service-editable
-	npm install
-	twilio serverless:deploy --runtime node14
+deploy:
+	@if [[ ! -f .env.localhost ]]; then \
+      echo ".env.localhost needs to be copied from .env and value set!!! aborting..."; \
+    fi
+	@[[ -f .env.localhost ]]
+	twilio serverless:deploy --runtime node14 --env=.env.localhost
+	@echo If initial deployment, also execute "make make-service-editable"
 
 
-run-frontend:
+# separate make target needed to be abortable
+confirm-delete:
+	@read -p "Delete $(SERVICE_NAME) service? [y/n] " answer && [[ $${answer:-N} = y ]]
+
+
+undeploy: get-service-sid confirm-delete
+	twilio api:serverless:v1:services:remove --sid $(SERVICE_SID)
+	rm -f .twiliodeployinfo
+
+
+run-app:
 	cd app && npm install
 	cd app && npm run start
 
 
-run-backend:
+run-serverless:
 	npm install
-	if [[ ! -f .env.localhost ]]; then \
-      echo ".env.localhost needs to be copied from .env and value set!!!"; \
-    else \
-	  twilio serverless:start --env=.env.localhost; \
-	fi;
+	@if [[ ! -f .env.localhost ]]; then \
+      echo ".env.localhost needs to be copied from .env and value set!!! aborting..."; \
+    fi
+	@[[ -f .env.localhost ]]
+	twilio serverless:start --env=.env.localhost
 
 
 tail-log: get-environment-sid

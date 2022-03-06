@@ -18,37 +18,84 @@ const fs = require('fs');
 
 
 exports.handler = async function(context, event, callback) {
-  const THIS = 'deploy-application';
+  const THIS = 'deploy-service';
 
   assert(context.DOMAIN_NAME.startsWith('localhost:'), `Can only run on localhost!!!`);
   console.time(THIS);
   try {
     assert(event.configuration.APPLICATION_NAME, 'missing APPLICATION_NAME variable!!!');
+    assert(event.action, 'missing event.action variable!!!');
     const application_name = event.configuration.APPLICATION_NAME;
+    const env = event.configuration;
+    console.log(THIS, 'configuration:', env);
 
-    console.log(THIS, `Deploying Twilio service ... ${application_name}`);
-    const environmentVariables = event.configuration;
-    console.log(THIS, 'configuration:', environmentVariables);
+    console.log(THIS, `Deploying (${event.action}) Twilio service ... ${application_name}`);
 
-    const service_sid = await deployService(context, environmentVariables);
-    console.log(THIS, `Deployed: ${service_sid}`);
+    switch (event.action) {
 
-    console.log(THIS, 'Make Twilio service editable ...');
-    const client = context.getTwilioClient();
-    await client.serverless
-      .services(service_sid)
-      .update({ uiEditable: true });
+      case 'DEPLOY': {
+        const service_sid = await deployService(context, env);
+        console.log(THIS, `Deployed: ${service_sid}`);
 
-    console.log(THIS, 'Provisioning dependent Twilio services');
-    const params = await getAllParams(context);
-    //console.log(THIS, params);
+        console.log(THIS, 'Make Twilio service editable ...');
+        const client = context.getTwilioClient();
+        await client.serverless
+          .services(service_sid)
+          .update({uiEditable: true});
 
-    console.log(THIS, `Completed deployment of ${application_name}`);
+        console.log(THIS, 'Provisioning dependent Twilio services');
+        const params = await getAllParams(context);
+        //console.log(THIS, params);
 
-    return callback(null, {
-      service_sid: service_sid,
-      service_status: 'DEPLOYED',
-    });
+        console.log(THIS, `Completed deployment of ${application_name}`);
+
+        return callback(null, {
+          service_sid: service_sid,
+          service_status: 'DEPLOYED',
+        });
+      }
+        break;
+
+      case 'REDEPLOY': {
+        const service_sid = await deployService(context, env);
+        console.log(THIS, `Deployed: ${service_sid}`);
+
+        console.log(THIS, 'Make Twilio service editable ...');
+        const client = context.getTwilioClient();
+        await client.serverless
+          .services(service_sid)
+          .update({uiEditable: true});
+
+        console.log(THIS, 'Provisioning dependent Twilio services');
+        const params = await getAllParams(context);
+        //console.log(THIS, params);
+
+        console.log(THIS, `Completed deployment of ${application_name}`);
+
+        return callback(null, {
+          service_sid: service_sid,
+          service_status: 'REDEPLOYED',
+        });
+      }
+        break;
+
+      case 'UNDEPLOY': {
+        const service_sid = await getParam(context, 'SERVICE_SID');
+        const client = context.getTwilioClient();
+
+        console.log('here');
+        await client.serverless.services(service_sid).remove();
+        console.log('there');
+
+        return callback(null, {
+          service_sid: service_sid,
+          service_status: 'UNDEPLOYED',
+        });
+      }
+        break;
+
+      default: throw new Error(`unknown event.action=${action}`);
+    }
 
   } catch(err) {
     console.log(err);

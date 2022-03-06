@@ -2,13 +2,11 @@
 /* --------------------------------------------------------------------------------
  * retrieves information about application:
  * - Twilio account
- * - purchase Twilio phone numbers
+ * - purchased Twilio phone numbers
  * - environment variables defined in .env file
  * - current environment variable values, if service already deployed
  *
  * NOTE: that this function can only be run on localhost
- *
- * - service identified via unique_name = APPLICATION_NAME in helpers.private.js
  *
  * event:
  * . n/a
@@ -21,13 +19,14 @@
  * - configurationValues : { key: value, ... }
  * --------------------------------------------------------------------------------
  */
+const assert = require("assert");
 const { getParam, assertLocalhost } = require(Runtime.getFunctions()['helpers'].path);
 
 exports.handler = async function (context, event, callback) {
-  const THIS = 'get-application';
+  const THIS = 'get-configuration:';
 
   console.time(THIS);
-  assertLocalhost(context);
+  assert(context.DOMAIN_NAME.startsWith('localhost:'), `Can only run on localhost!!!`);
   try {
     const client = context.getTwilioClient();
 
@@ -41,7 +40,8 @@ exports.handler = async function (context, event, callback) {
       response.twilioAccountName = account.friendlyName;
     }
 
-    // ---------- phone numbers
+    // ---------- available twilio phone numbers
+    // any additional filtering of phone should be here
     {
       const phoneList = await client.api.accounts(context.ACCOUNT_SID).incomingPhoneNumbers.list();
 
@@ -84,7 +84,9 @@ exports.handler = async function (context, event, callback) {
       }
     }
 
-    //console.log(THIS, response);
+    console.log(THIS, 'twilioAccountName:', response.twilioAccountName);
+    console.log(THIS, 'twilioPhoneNumbers.length:', response.twilioPhoneNumbers.length);
+    console.log(THIS, 'configuration:', response.configurationVariables.map(c => ({ [c.key]: c.value })));
     return callback(null, response);
 
   } catch (err) {

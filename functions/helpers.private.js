@@ -129,46 +129,9 @@ async function getParam(context, key) {
         return environment.domainName;
       }
 
-      case 'TWILIO_API_KEY_SID': {
-        // value set in .env takes precedence
-        if (context.TWILIO_API_KEY_SID) return context.TWILIO_API_KEY_SID
-
-        const apikeys = await client.keys.list();
-        let apikey = apikeys.find(k => k.friendlyName === context.APPLICATION_NAME);
-        if (apikey) {
-          await setParam(context, key, apikey.sid);
-          return apikey.sid;
-        }
-
-        console.log('API Key not found so creating a new API Key...');
-        await client.newKeys
-          .create({ friendlyName: context.APPLICATION_NAME })
-          .then((result) => {
-            apikey = result;
-          })
-          .catch(err => {
-            throw new Error('Unable to create a API Key!!! ABORTING!!!');
-          });
-
-        await setParam(context, key, apikey.sid);
-        await setParam(context, 'TWILIO_API_KEY_SECRET', apikey.secret);
-        context.TWILIO_API_KEY_SECRET = apikey.secret;
-
-        return apikey.sid;
-      }
-
-      case 'TWILIO_API_KEY_SECRET': {
-        // value set in .env takes precedence
-        if (context.TWILIO_API_KEY_SECRET) return context.TWILIO_API_KEY_SECRET
-
-        await getParam(context, 'TWILIO_API_KEY_SID');
-
-        return context.TWILIO_API_KEY_SECRET;
-      }
-
       case 'TWILIO_VERIFY_SID': {
         // value set in .env takes precedence
-        if (context.TWILIO_SYNC_SID) return context.TWILIO_SYNC_SID
+        if (context.TWILIO_SYNC_SID) return context.TWILIO_SYNC_SID;
 
         const services = await client.verify.services.list();
         const service = services.find(s => s.friendlyName === context.APPLICATION_NAME);
@@ -189,6 +152,42 @@ async function getParam(context, key) {
           });
         await setParam(context, key, sid);
 
+        return sid;
+      }
+
+      case 'FLEX_SID': {
+        // value set in .env takes precedence
+        if (context.FLEX_SID) return context.FLEX_SID;
+
+        const flex = await client.flexApi.v1.configuration().fetch();
+        const sid = flex.flexServiceInstanceSid;
+
+        assert(flex, `Flex instance not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
+        await setParam(context, key, sid);
+        return sid;
+      }
+
+      case 'FLEX_WEB_FLOW_SID': {
+        // value set in .env takes precedence
+        if (context.FLEX_WEB_FLOW_SID) return context.FLEX_WEB_FLOW_SID;
+
+        const flows = await client.flexApi.v1.flexFlow.list();
+        const sid = flows.filter(f => f.channelType === 'web')[0].sid;
+
+        assert(sid, `Flex web flow not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
+        await setParam(context, key, sid);
+        return sid;
+      }
+
+      case 'FLEX_WORKSPACE_SID': {
+        // value set in .env takes precedence
+        if (context.FLEX_WORKSPACE_SID) return context.FLEX_WORKSPACE_SID;
+
+        const flex = await client.flexApi.v1.configuration().fetch();
+        const sid = flex.taskrouterWorkspaceSid;
+
+        assert(sid, `Taskrouter Workspace Sid not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
+        await setParam(context, key, sid);
         return sid;
       }
 
@@ -221,9 +220,6 @@ async function getAllParams(context) {
   const keys_context = Object.keys(context);
   // keys defined in getParam function above
   const keys_derived = [];
-
-  // to force saving of 'secret'
-  await getParam(context, 'TWILIO_API_KEY_SID');
 
   const keys_all = keys_context.concat(keys_derived).sort();
   try {
