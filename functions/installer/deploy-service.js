@@ -50,6 +50,10 @@ exports.handler = async function(context, event, callback) {
         const params = await getAllParams(context);
         //console.log(THIS, params);
 
+        const fp = Runtime.getAssets()['/deploy-studio-flow.sh'].path;
+        execSync(fp, { stdio: 'inherit' });
+        console.log(THIS, 'deployed Studio flow');
+
         console.log(THIS, `Completed deployment of ${application_name}`);
 
         return callback(null, {
@@ -74,6 +78,10 @@ exports.handler = async function(context, event, callback) {
         console.log(THIS, 'Provisioning dependent Twilio services');
         const params = await getAllParams(context);
         //console.log(THIS, params);
+
+        const fp = Runtime.getAssets()['/deploy-studio-flow.sh'].path;
+        execSync(fp, { stdio: 'inherit' });
+        console.log(THIS, 'deployed Studio flow');
 
         console.log(THIS, `Completed deployment of ${application_name}`);
 
