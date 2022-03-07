@@ -186,8 +186,14 @@ package-flow:
 	assets/package-studio-flow.private.sh
 
 
-deploy-flow:
+deploy-flow: get-flex-web-flow-sid get-flow-sid
 	assets/deploy-studio-flow.private.sh
+
+	@echo configuring flex -to- studio-flow
+	twilio api:flex:v1:flex-flows:update --sid=$(FLEX_WEB_FLOW_SID) \
+	--integration-type=studio \
+	--integration.retry-count=3 \
+	--integration.flow-sid=$(STUDIO_FLOW_SID)
 
 
 undeploy-flow: get-flow-sid
@@ -204,7 +210,7 @@ run-serverless:
       echo ".env.localhost needs to be copied from .env and value set!!! aborting..."; \
     fi
 	@[[ -f .env.localhost ]]
-	twilio serverless:start --env=.env.localhost
+	twilio serverless:start --env=.env.localhost --load-local-env
 
 
 tail-log: get-environment-sid

@@ -191,6 +191,19 @@ async function getParam(context, key) {
         return sid;
       }
 
+      case 'STUDIO_FLOW_SID': {
+        // value set in .env takes precedence
+        if (context.STUDIO_FLOW_SID) return context.STUDIO_FLOW_SID;
+
+        const STUDIO_FLOW_NAME = await getParam(context, 'STUDIO_FLOW_NAME');
+        const flows = await client.studio.flows.list();
+        const sid = flows.filter(f => f.friendlyName === STUDIO_FLOW_NAME)[0].sid;
+
+        assert(sid, `Studio flow not found named ${STUDIO_FLOW_NAME}!!!`);
+        //await setParam(context, key, sid);
+        return sid;
+      }
+
       default:
         if (key in context) return context[key];
 

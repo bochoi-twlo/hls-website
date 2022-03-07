@@ -50,9 +50,31 @@ exports.handler = async function(context, event, callback) {
         const params = await getAllParams(context);
         //console.log(THIS, params);
 
-        const fp = Runtime.getAssets()['/deploy-studio-flow.sh'].path;
-        execSync(fp, { stdio: 'inherit' });
-        console.log(THIS, 'deployed Studio flow');
+        if (false) {
+          const fp = Runtime.getAssets()['/deploy-studio-flow.sh'].path;
+          console.log(THIS, 'PATH:', process.env.PATH);
+          execSync(fp, {
+            stdio: 'inherit',
+            shell: '/bin/bash',
+            env: {
+              'PATH': process.env.PATH,
+              'TWILIO_ACCOUNT_SID': context.ACCOUNT_SID,
+              'TWILIO_AUTH_TOKEN': context.AUTH_TOKEN,
+            }
+          });
+          console.log(THIS, 'deployed Studio flow');
+
+          const FLEX_WEB_FLOW_SID = await getParam(context, 'FLEX_WEB_FLOW_SID');
+          const STUDIO_FLOW_SID = await getParam(context, 'STUDIO_FLOW_SID');
+          await client.flexApi.v1.flexFlow(FLEX_WEB_FLOW_SID)
+            .update({
+              integrationType: 'studio',
+              integration: {
+                retryCount: 3,
+                flowSid: STUDIO_FLOW_SID,
+              }
+            });
+        }
 
         console.log(THIS, `Completed deployment of ${application_name}`);
 
@@ -79,9 +101,31 @@ exports.handler = async function(context, event, callback) {
         const params = await getAllParams(context);
         //console.log(THIS, params);
 
-        const fp = Runtime.getAssets()['/deploy-studio-flow.sh'].path;
-        execSync(fp, { stdio: 'inherit' });
-        console.log(THIS, 'deployed Studio flow');
+        if (false) {
+          const fp = Runtime.getAssets()['/deploy-studio-flow.sh'].path;
+          console.log(THIS, 'PATH:', process.env.PATH);
+          execSync(fp, {
+            stdio: 'inherit',
+            shell: '/bin/bash',
+            env: {
+              'PATH': process.env.PATH,
+              'TWILIO_ACCOUNT_SID': context.ACCOUNT_SID,
+              'TWILIO_AUTH_TOKEN': context.AUTH_TOKEN,
+            }
+          });
+          console.log(THIS, 'deployed Studio flow');
+
+          const FLEX_WEB_FLOW_SID = await getParam(context, 'FLEX_WEB_FLOW_SID');
+          const STUDIO_FLOW_SID = await getParam(context, 'STUDIO_FLOW_SID');
+          await client.flexApi.v1.flexFlow(FLEX_WEB_FLOW_SID)
+            .update({
+              integrationType: 'studio',
+              integration: {
+                retryCount: 3,
+                flowSid: STUDIO_FLOW_SID,
+              }
+            });
+        }
 
         console.log(THIS, `Completed deployment of ${application_name}`);
 
