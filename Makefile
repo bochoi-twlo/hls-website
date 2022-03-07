@@ -20,7 +20,7 @@ endif
 # ---------- variables
 BLUEPRINT_NAME   := $(shell basename `pwd`)
 SERVICE_NAME     := $(BLUEPRINT_NAME)
-STUDIO_FLOW_NAME := BJC
+STUDIO_FLOW_NAME := hls-webchat
 GIT_REPO_URL     := $(shell git config --get remote.origin.url)
 INSTALLER_NAME   := hls-website-installer
 CPU_HARDWARE     := $(shell uname -m)
@@ -49,11 +49,10 @@ installer-build-github:
 
 
 installer-build-local:
-	docker build --tag $(INSTALLER_NAME) --no-cache $(DOCKER_EMULATION) .
+	docker build --tag $(INSTALLER_NAME) $(DOCKER_EMULATION) --no-cache .
 
 
 installer-run:
-	$(eval PLATFORM := $(shell ))
 	docker run --name $(INSTALLER_NAME) --rm --publish 3000:3000 $(DOCKER_EMULATION) \
 	--env ACCOUNT_SID=$(TWILIO_ACCOUNT_SID) --env AUTH_TOKEN=$(TWILIO_AUTH_TOKEN) \
 	--interactive --tty $(INSTALLER_NAME)
@@ -151,13 +150,7 @@ make-service-editable: get-service-sid
 
 
 deploy-service:
-	@if [[ ! -f .env.localhost ]]; then \
-      echo ".env.localhost needs to be copied from .env and value set!!! aborting..."; \
-    fi
-	@[[ -f .env.localhost ]]
-	twilio serverless:deploy --runtime node14 --env=.env.localhost
-
-	@echo If initial deployment, also execute "make make-service-editable"
+	twilio serverless:deploy --runtime node14 --override-existing-project
 
 
 # separate make target needed to be abortable
@@ -170,15 +163,35 @@ undeploy-service: get-service-sid confirm-delete
 	rm -f .twiliodeployinfo
 
 
-deploy-all: build deploy-service get-flex-web-flow-sid get-flow-sid
-	@echo TODO replace ACCOUNT_SID & flex Flow SID in assets/webchat-appConfig.js
+configure-webchat: get-flex-web-flow-sid
+	@echo configuring assets/webchat-appConfig.js
+	sed -i '' -e 's/accountSid: "AC[0-9a-f]*"/accountSid: "'$(TWILIO_ACCOUNT_SID)'"/' assets/webchat-appConfig.js
+	sed -i '' -e 's/flexFlowSid: "FO[0-9a-f]*"/flexFlowSid: "'$(FLEX_WEB_FLOW_SID)'"/' assets/webchat-appConfig.js
 
-	twilio api:flex:v1:flex-flows:update --sid $(FLEX_WEB_FLOW_SID) \
-	--integration-type studio --integration.retry-count 3 --integration.flow-sid $(STUDIO_FLOW_SID)
+
+configure-flex-flow: get-flex-web-flow-sid get-flow-sid
+	@echo configuring flex -to- studio-flow
+	twilio api:flex:v1:flex-flows:update --sid=$(FLEX_WEB_FLOW_SID) \
+	--integration-type=studio \
+	--integration.retry-count=3 \
+	--integration.flow-sid=$(STUDIO_FLOW_SID)
 
 
-package-flow: get-flow-sid
-	assets/package-studio-flow-template.private.sh
+deploy-all: build configure-webchat deploy-service configure-flex-flow
+	@echo deployed and configured!
+	@echo If initial deployment, also execute "make make-service-editable"
+
+
+package-flow:
+	assets/package-studio-flow.private.sh
+
+
+deploy-flow:
+	assets/deploy-studio-flow.private.sh
+
+
+undeploy-flow: get-flow-sid
+	twilio api:studio:v2:flows:remove --sid $(STUDIO_FLOW_SID)
 
 run-app:
 	cd app && npm install

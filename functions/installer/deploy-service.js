@@ -15,6 +15,7 @@ const { getParam, getAllParams } = require(Runtime.getFunctions()['helpers'].pat
 const { TwilioServerlessApiClient } = require('@twilio-labs/serverless-api');
 const { getListOfFunctionsAndAssets } = require('@twilio-labs/serverless-api/dist/utils/fs');
 const fs = require('fs');
+const { execSync } = require('child_process');
 
 
 exports.handler = async function(context, event, callback) {
@@ -34,6 +35,8 @@ exports.handler = async function(context, event, callback) {
     switch (event.action) {
 
       case 'DEPLOY': {
+        await configureWebChat(context);
+
         const service_sid = await deployService(context, env);
         console.log(THIS, `Deployed: ${service_sid}`);
 
@@ -57,6 +60,8 @@ exports.handler = async function(context, event, callback) {
         break;
 
       case 'REDEPLOY': {
+        await configureWebChat(context);
+
         const service_sid = await deployService(context, env);
         console.log(THIS, `Deployed: ${service_sid}`);
 
@@ -102,6 +107,39 @@ exports.handler = async function(context, event, callback) {
     return callback(err);
   } finally {
     console.timeEnd(THIS);
+  }
+}
+
+/* --------------------------------------------------------------------------------
+ * configure webchat-appConfig.js
+ * --------------------------------------------------------------------------------
+ */
+async function configureWebChat(context) {
+  console.log(process.cwd());
+  const {assets} = await getListOfFunctionsAndAssets(
+    process.cwd(),
+    {
+      functionsFolderNames: [],
+      assetsFolderNames: ["assets"],
+    });
+  const webChatappConfigAsset = assets.filter(a => a.name.endsWith('webchat-appConfig.js'));
+
+  // run only if react build is present in assets
+  if (webChatappConfigAsset.length === 1) {
+    console.log(webChatappConfigAsset[0]);
+
+    const fdata = fs.readFileSync(webChatappConfigAsset[0].filePath, {encoding: 'utf8', flag: 'r+'});
+
+    //console.log(fdata);
+    const ACCOUNT_SID = await getParam(context, 'ACCOUNT_SID');
+    const FLEX_WEB_FLOW_SID = await getParam(context, 'FLEX_WEB_FLOW_SID');
+    console.log(ACCOUNT_SID, FLEX_WEB_FLOW_SID);
+    const fdataReplacement = fdata
+      .replace(/AC[0-9a-z]{32}/, ACCOUNT_SID)
+      .replace(/FO[0-9a-z]{32}/, FLEX_WEB_FLOW_SID);
+    //console.log(fdataReplacement);
+
+    fs.writeFileSync(webChatappConfigAsset[0].filePath, fdataReplacement);
   }
 }
 

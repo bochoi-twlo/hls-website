@@ -17,7 +17,7 @@ class App extends React.Component {
 
     // Alter the predefined Message
     FlexWebChat.MessagingCanvas.defaultProps.predefinedMessage.authorName = 'Owl Health';
-    FlexWebChat.MessagingCanvas.defaultProps.predefinedMessage.body = ' 👋 Are you a new or existing customer?';
+    FlexWebChat.MessagingCanvas.defaultProps.predefinedMessage.body = ' 👋 Are you a new or existing patient?';
   
     // Alter the Welcome Message
     FlexWebChat.MessageList.WelcomeMessage = 'Welcome to Owl Health, I hope you are having a wonderful day!, ';
