@@ -183,11 +183,11 @@ deploy-all: build configure-webchat deploy-service configure-flex-flow
 
 
 package-flow:
-	assets/package-studio-flow.private.sh
+	assets/installer/package-studio-flow.private.sh
 
 
 deploy-flow: get-flex-web-flow-sid get-flow-sid
-	assets/deploy-studio-flow.private.sh
+	assets/installer/deploy-studio-flow.private.sh
 
 	@echo configuring flex -to- studio-flow
 	twilio api:flex:v1:flex-flows:update --sid=$(FLEX_WEB_FLOW_SID) \

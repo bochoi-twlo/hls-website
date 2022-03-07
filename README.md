@@ -50,11 +50,11 @@ If running on Apple Silicon (M1 chip), add `--platform linux/amd64` option.
 
 #### Run Installer Docker Container
 
-Replace `${ACCOUNT_SID}` and `${AUTH_TOKEN}` with that of your target Twilio account.
+Replace `${TWILIO_ACCOUNT_SID}` and `${TWILIO_AUTH_TOKEN}` with that of your target Twilio account.
 
 ```shell
 docker run --name hls-website-installer --rm --publish 3000:3000  \
---env ACCOUNT_SID=${ACCOUNT_SID} --env AUTH_TOKEN=${AUTH_TOKEN} \
+--env ACCOUNT_SID=${TWILIO_ACCOUNT_SID} --env AUTH_TOKEN=${TWILIO_AUTH_TOKEN} \
 --interactive --tty hls-website-installer
 ```
 
