@@ -19,7 +19,7 @@ const { execSync } = require('child_process');
 
 
 exports.handler = async function(context, event, callback) {
-  const THIS = 'deploy-service';
+  const THIS = 'deploy';
 
   assert(context.DOMAIN_NAME.startsWith('localhost:'), `Can only run on localhost!!!`);
   console.time(THIS);
@@ -34,57 +34,7 @@ exports.handler = async function(context, event, callback) {
 
     switch (event.action) {
 
-      case 'DEPLOY': {
-        await configureWebChat(context);
-
-        const service_sid = await deployService(context, env);
-        console.log(THIS, `Deployed: ${service_sid}`);
-
-        console.log(THIS, 'Make Twilio service editable ...');
-        const client = context.getTwilioClient();
-        await client.serverless
-          .services(service_sid)
-          .update({uiEditable: true});
-
-        console.log(THIS, 'Provisioning dependent Twilio services');
-        const params = await getAllParams(context);
-        //console.log(THIS, params);
-
-        if (false) {
-          const fp = Runtime.getAssets()['/deploy-studio-flow.sh'].path;
-          console.log(THIS, 'PATH:', process.env.PATH);
-          execSync(fp, {
-            stdio: 'inherit',
-            shell: '/bin/bash',
-            env: {
-              'PATH': process.env.PATH,
-              'TWILIO_ACCOUNT_SID': context.ACCOUNT_SID,
-              'TWILIO_AUTH_TOKEN': context.AUTH_TOKEN,
-            }
-          });
-          console.log(THIS, 'deployed Studio flow');
-
-          const FLEX_WEB_FLOW_SID = await getParam(context, 'FLEX_WEB_FLOW_SID');
-          const STUDIO_FLOW_SID = await getParam(context, 'STUDIO_FLOW_SID');
-          await client.flexApi.v1.flexFlow(FLEX_WEB_FLOW_SID)
-            .update({
-              integrationType: 'studio',
-              integration: {
-                retryCount: 3,
-                flowSid: STUDIO_FLOW_SID,
-              }
-            });
-        }
-
-        console.log(THIS, `Completed deployment of ${application_name}`);
-
-        return callback(null, {
-          service_sid: service_sid,
-          service_status: 'DEPLOYED',
-        });
-      }
-        break;
-
+      case 'DEPLOY':
       case 'REDEPLOY': {
         await configureWebChat(context);
 
@@ -101,53 +51,39 @@ exports.handler = async function(context, event, callback) {
         const params = await getAllParams(context);
         //console.log(THIS, params);
 
-        if (false) {
-          const fp = Runtime.getAssets()['/deploy-studio-flow.sh'].path;
-          console.log(THIS, 'PATH:', process.env.PATH);
-          execSync(fp, {
-            stdio: 'inherit',
-            shell: '/bin/bash',
-            env: {
-              'PATH': process.env.PATH,
-              'TWILIO_ACCOUNT_SID': context.ACCOUNT_SID,
-              'TWILIO_AUTH_TOKEN': context.AUTH_TOKEN,
-            }
-          });
-          console.log(THIS, 'deployed Studio flow');
-
-          const FLEX_WEB_FLOW_SID = await getParam(context, 'FLEX_WEB_FLOW_SID');
-          const STUDIO_FLOW_SID = await getParam(context, 'STUDIO_FLOW_SID');
-          await client.flexApi.v1.flexFlow(FLEX_WEB_FLOW_SID)
-            .update({
-              integrationType: 'studio',
-              integration: {
-                retryCount: 3,
-                flowSid: STUDIO_FLOW_SID,
-              }
-            });
-        }
+        const studio_flow_sid = await deployStudioFlow(context);
+        console.log(THIS, 'deployed Studio flow');
 
         console.log(THIS, `Completed deployment of ${application_name}`);
 
-        return callback(null, {
-          service_sid: service_sid,
-          service_status: 'REDEPLOYED',
-        });
+        const response = {
+          status: event.action,
+          deployables: [
+            { service_sid: service_sid, },
+            { studio_flow_id: studio_flow_sid, },
+          ],
+        };
+        console.log(THIS, response);
+        return callback(null, response);
       }
         break;
 
       case 'UNDEPLOY': {
-        const service_sid = await getParam(context, 'SERVICE_SID');
-        const client = context.getTwilioClient();
+        const undeployed_service_sid = await undeployService(context);
 
-        console.log('here');
-        await client.serverless.services(service_sid).remove();
-        console.log('there');
+        const undeployed_studio_flow_sid = await undeployStudioFlow(context);
 
-        return callback(null, {
-          service_sid: service_sid,
-          service_status: 'UNDEPLOYED',
-        });
+        // TODO: un-provision other services
+
+        const response = {
+          status: 'UNDEPLOYED',
+          deployables: [
+            { service_sid: undeployed_service_sid, },
+            { studio_flow_id: undeployed_studio_flow_sid, },
+          ],
+        };
+        console.log(THIS, response);
+        return callback(null, response);
       }
         break;
 
@@ -221,6 +157,10 @@ async function getAssets() {
   return allAssets;
 }
 
+/* --------------------------------------------------------------------------------
+ * deploys serverless service
+ * --------------------------------------------------------------------------------
+ */
 async function deployService(context, envrionmentVariables = {}) {
   const client = context.getTwilioClient();
 
@@ -276,4 +216,122 @@ async function deployService(context, envrionmentVariables = {}) {
   service_sid = await getParam(context, 'SERVICE_SID');
 
   return service_sid;
+}
+
+/* --------------------------------------------------------------------------------
+ * undeploys sererless service
+ * --------------------------------------------------------------------------------
+ */
+async function undeployService(context) {
+  const THIS = 'undeployService:';
+  try {
+    const client = context.getTwilioClient();
+    // ---------- remove studio flow, if exists
+    const SERVICE_SID = await getParam(context, 'SERVICE_SID'); // will be null if not deployed
+    if (SERVICE_SID) {
+      const response = await client.serverless.services(service_sid).remove();
+      console.log(THIS, response);
+    }
+
+    return SERVICE_SID;
+
+  } catch (err) {
+    console.log(THIS, 'error');
+    throw new Error(err);
+  } finally {
+    console.log(THIS, 'sucess');
+  }
+}
+
+/* --------------------------------------------------------------------------------
+ * deploys studio flow
+ * . create/update studio flow
+ * . set flex flow integration for webchat
+ * --------------------------------------------------------------------------------
+ */
+async function deployStudioFlow(context) {
+  const THIS = 'deployStudioFlow:';
+
+  try {
+    const SERVICE_SID           = await getParam(context, 'SERVICE_SID');
+    const FUNCTION_SID          = await getParam(context, 'FUNCTION_SID');
+    const ENVIRONMENT_SID       = await getParam(context, 'ENVIRONMENT_SID');
+    const ENVIRONMENT_DOMAIN    = await getParam(context, 'ENVIRONMENT_DOMAIN');
+    const FLEX_WORKFLOW_SID     = await getParam(context, 'FLEX_WORKFLOW_SID');
+    const FLEX_TASK_CHANNEL_SID = await getParam(context, 'FLEX_TASK_CHANNEL_SID');
+    const STUDIO_FLOW_NAME      = await getParam(context, 'STUDIO_FLOW_NAME');
+    let   STUDIO_FLOW_SID       = await getParam(context, 'STUDIO_FLOW_SID'); // will be null if not deployed
+
+    const flow_definition_file = Runtime.getAssets()['/installer/studio-flow-template.json'].path;
+    let flow_definition = fs.readFileSync(flow_definition_file).toString('utf-8')
+      .replace(/YOUR_SERVICE_SID/g, SERVICE_SID)
+      .replace(/YOUR_FUNCTION_SID/g, FUNCTION_SID)
+      .replace(/YOUR_ENVIRONMENT_SID/g, ENVIRONMENT_SID)
+      .replace(/YOUR_ENVIRONMENT_DOMAIN/g, ENVIRONMENT_DOMAIN)
+      .replace(/YOUR_FLEX_WORKFLOW_SID/g, FLEX_WORKFLOW_SID)
+      .replace(/YOUR_FLEX_TASK_CHANNEL_SID/g, FLEX_TASK_CHANNEL_SID);
+
+    const client = context.getTwilioClient();
+    // ---------- create/update studio flow
+    const flow = (STUDIO_FLOW_SID)
+      ? await client.studio.flows(STUDIO_FLOW_SID).update({
+        status: 'published',
+        commitMessage: 'installer deploy update',
+        definition: `${flow_definition}`,
+      })
+      : await client.studio.flows.create({
+        friendlyName: STUDIO_FLOW_NAME,
+        status: 'published',
+        commitMessage: 'installer deploy create',
+        definition: `${flow_definition}`,
+      });
+    STUDIO_FLOW_SID = flow.sid;
+
+    // ---------- update flex flow for webchat with studio flow
+    const FLEX_WEB_FLOW_SID = await getParam(context, 'FLEX_WEB_FLOW_SID');
+    await client.flexApi.v1.flexFlow(FLEX_WEB_FLOW_SID)
+      .update({
+        integrationType: 'studio',
+        integration: {
+          retryCount: 3,
+          flowSid: STUDIO_FLOW_SID,
+        }
+      });
+
+    return STUDIO_FLOW_SID;
+
+  } catch (err) {
+    console.log(THIS, 'error');
+    throw new Error(err);
+  } finally {
+    console.log(THIS, 'sucess');
+  }
+}
+
+/* --------------------------------------------------------------------------------
+ * undeploys studio flow
+ * --------------------------------------------------------------------------------
+ */
+async function undeployStudioFlow(context) {
+  const THIS = 'undeployStudioFlow:';
+  try {
+    const client = context.getTwilioClient();
+    // ---------- remove studio flow, if exists
+    const STUDIO_FLOW_SID = await getParam(context, 'STUDIO_FLOW_SID'); // will be null if not deployed
+    if (STUDIO_FLOW_SID) {
+      const response = await client.studio.v1.flows(STUDIO_FLOW_SID).remove();
+      console.log(THIS, response);
+    }
+
+    // ---------- TODO: clear flex flow integration settings
+    const FLEX_WEB_FLOW_SID = await getParam(context, 'FLEX_WEB_FLOW_SID');
+
+    return STUDIO_FLOW_SID;
+
+  } catch (err) {
+    console.log(THIS, 'error');
+    throw new Error(err);
+  } finally {
+    console.log(THIS, 'sucess');
+  }
 }

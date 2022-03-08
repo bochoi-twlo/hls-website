@@ -69,11 +69,11 @@ function checkDisableAuthForLocalhost(context) {
 /* -----------------------------------------------------------------------
  * This function returns Verify Service SID from context.
  *
- * TWILIO_VERIFY_SID environment variable MUST be set during service deployment
+ * VERIFY_SID environment variable MUST be set during service deployment
  */
 async function getVerifyServiceId(context) {
-  if ('TWILIO_VERIFY_SID' in context && context.TWILIO_VERIFY_SID) return context.TWILIO_VERIFY_SID;
-  throw new Error('getVerifyServiceId: TWILIO_VERIFY_SID environment varialbe must be set!!!');
+  if ('VERIFY_SID' in context && context.VERIFY_SID) return context.VERIFY_SID;
+  throw new Error('getVerifyServiceId: VERIFY_SID environment varialbe must be set!!!');
 }
 // -----------------------------------------------------
 

@@ -80,17 +80,19 @@
       <div class="form-group">
         <div id="service-deploy" style="display: none;" class="deployer">
           <div id="service-deployed" style="display: none;" class="deployer">
-            <h4><span class="checkmark">&#10003;</span> Service is deployed</h4>
+            <h4><span class="checkmark">&#10003;</span> Application is deployed</h4>
             <span>
               <a id="service-open" class="button button-outline" href="" target="_blank">Open Administration Page</a>
               <a id="service-console-open" class="button button-outline" href="" target="_blank">Open Service</a>
+              <a id="console-open-studio-flow" class="button button-outline" href="" target="_blank">Open Studio Flow</a>
             </span>
+            <pre id="deploy-information" style="font-size: small"></pre>
           </div>
-          <a class="button" id="service-deploy-button"   onclick="deployService(event, 'DEPLOY');">Deploy Service</a>
-          <a class="button" id="service-redeploy-button" onclick="deployService(event, 'REDEPLOY');">Redeploy Service</a>
-          <a class="button" id="service-undeploy-button" onclick="deployService(event, 'UNDEPLOY');">Remove Service</a>
+          <a class="button" id="service-deploy-button"   onclick="deploy(event, 'DEPLOY');">deploy</a>
+          <a class="button" id="service-redeploy-button" onclick="deploy(event, 'REDEPLOY');">redeploy</a>
+          <a class="button" id="service-undeploy-button" onclick="deploy(event, 'UNDEPLOY');">undeploy</a>
           <div id="service-deploying" style="display: none;" class="deployer">
-            <h4>Service is being deployed.</h4>
+            <h4>Application is being deployed.</h4>
             <p>
             <div class="lds-ellipsis">
               <div></div>

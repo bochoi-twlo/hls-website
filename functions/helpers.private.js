@@ -38,8 +38,8 @@ function assertLocalhost(context) {
  * --------------------------------------------------------------------------------
  */
 async function setParam(context, key, value) {
-  const service_sid = await getParam(context, 'SERVICE_SID');
-  if (! service_sid) return null; // do nothing is service is not deployed
+  if (context.DOMAIN_NAME.startsWith('localhost:')) return null; // do nothing on localhost
+  if (context.service_sid) return null; // do nothing is service is not deployed
   const environment_sid = await getParam(context, 'ENVIRONMENT_SID');
 
   const client = context.getTwilioClient();
@@ -66,6 +66,8 @@ async function setParam(context, key, value) {
       .variables.create({ key, value })
       .then((v) => console.log('setParam: created variable', v.key));
   }
+
+  context[key] = value;
   return {
     key: key,
     value: value
@@ -94,6 +96,7 @@ async function getParam(context, key) {
 
         const services = await client.serverless.services.list();
         const service = services.find(s => s.uniqueName === context.APPLICATION_NAME);
+        await setParam(context, key, service.sid);
 
         return (service && service.sid) ? service.sid : null;
       }
@@ -129,7 +132,7 @@ async function getParam(context, key) {
         return environment.domainName;
       }
 
-      case 'TWILIO_VERIFY_SID': {
+      case 'VERIFY_SID': {
         // value set in .env takes precedence
         if (context.TWILIO_SYNC_SID) return context.TWILIO_SYNC_SID;
 
@@ -153,6 +156,20 @@ async function getParam(context, key) {
         await setParam(context, key, sid);
 
         return sid;
+      }
+
+      case 'FUNCTION_SID': {
+        // will throw error when running on localhost, so lookup by name if localhost
+        if (! isLocalhost(context) && context.FUNCTION_SID) return context.FUNCTION_SID;
+
+        const SERVICE_SID = await getParam(context, 'SERVICE_SID');
+        if (SERVICE_SID) {
+          const functions = await client.serverless.services(SERVICE_SID).functions.list();
+          const fn = functions.find(f => f.friendlyName.includes(context.FUNCTION_FNAME));
+          if (! fn) throw new Error(`no service function named ${context.FUNCTION_NAME}`)
+        } else {
+          return null;
+        }
       }
 
       case 'FLEX_SID': {
@@ -188,6 +205,32 @@ async function getParam(context, key) {
 
         assert(sid, `Taskrouter Workspace Sid not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
         await setParam(context, key, sid);
+        return sid;
+      }
+
+      case 'FLEX_WORKFLOW_SID': {
+        // value set in .env takes precedence
+        if (context.FLEX_WORKFLOW_SID) return context.FLEX_WORKFLOW_SID;
+
+        const STUDIO_FLOW_NAME = await getParam(context, 'STUDIO_FLOW_NAME');
+        const flows = await client.studio.flows.list();
+        const sid = flows.filter(f => f.friendlyName === STUDIO_FLOW_NAME)[0].sid;
+
+        assert(sid, `Studio flow not found named ${STUDIO_FLOW_NAME}!!!`);
+        //await setParam(context, key, sid);
+        return sid;
+      }
+
+      case 'FLEX_TASK_CHANNEL_SID': {
+        // value set in .env takes precedence
+        if (context.FLEX_TASK_CHANNEL_SID) return context.FLEX_TASK_CHANNEL_SID;
+
+        const STUDIO_FLOW_NAME = await getParam(context, 'STUDIO_FLOW_NAME');
+        const flows = await client.studio.flows.list();
+        const sid = flows.filter(f => f.friendlyName === STUDIO_FLOW_NAME)[0].sid;
+
+        assert(sid, `Studio flow not found named ${STUDIO_FLOW_NAME}!!!`);
+        //await setParam(context, key, sid);
         return sid;
       }
 

@@ -17,7 +17,7 @@ const { execSync } = require('child_process');
 const { getParam } = require(Runtime.getFunctions()['helpers'].path);
 
 exports.handler = async function (context, event, callback) {
-  const THIS = 'check-deployment:';
+  const THIS = 'check:';
 
   assert(context.DOMAIN_NAME.startsWith('localhost:'), `Can only run on localhost!!!`);
   console.time(THIS);
@@ -25,15 +25,15 @@ exports.handler = async function (context, event, callback) {
 
     // ---------- check service ----------------------------------------
     const service_sid        = await getParam(context, 'SERVICE_SID');
+    const studio_flow_sid    = await getParam(context, 'STUDIO_FLOW_SID');
     const environment_domain = service_sid ? await getParam(context, 'ENVIRONMENT_DOMAIN') : null;
     const application_url    = service_sid ? `https:/${environment_domain}/administration.html` : null;
 
     const response = {
-      'service': {
-        deploy_state: service_sid ? 'DEPLOYED' : 'NOT-DEPLOYED',
+        deploy_state: (service_sid && studio_flow_sid) ? 'DEPLOYED' : 'NOT-DEPLOYED',
         service_sid: service_sid,
+        studio_flow_sid: studio_flow_sid,
         application_url: application_url,
-      },
     };
     console.log(THIS, response);
     return callback(null, response);

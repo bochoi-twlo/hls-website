@@ -23,6 +23,7 @@ const UI = {
   service_deploying: '#service-deploying',
   service_open: '#service-open',
   service_console_open: '#service-console-open',
+  information: '#deploy-information',
 }
 
 
@@ -216,38 +217,8 @@ async function populate() {
 function checkDeployment() {
   const THIS = checkDeployment.name;
 
-  // ---------- service deployable
-  function checkService(deployable) {
-    if (! deployable.deploy_state)    throw new Error('Missing deployable.deploy_state');
-
-    $('#service-deploy .button').removeClass('loading');
-    $('#service-deploy').show();
-    if (deployable.deploy_state === 'NOT-DEPLOYED') {
-      $('#service-deployed').hide();
-      $('#service-open').hide();
-      $('#service-console-open').hide();
-      $('#service-deploy-button').show();
-      $('#service-deploy-button').css('pointer-events', '');
-      $('#service-redeploy-button').hide();
-      $('#service-undeploy-button').hide();
-      $('#service-deploying').hide();
-    } else if (deployable.deploy_state === 'DEPLOYED') {
-      $('#service-deployed').show();
-      $('#service-open').show();
-      $('#service-open').attr('href', deployable.application_url);
-      $('#service-console-open').show();
-      $('#service-console-open').attr('href', `https://www.twilio.com/console/functions/api/start/${deployable.service_sid}`);
-      $('#service-deploy-button').hide();
-      $('#service-redeploy-button').show();
-      $('#service-redeploy-button').css('pointer-events', '');
-      $('#service-undeploy-button').show();
-      $('#service-undeploy-button').css('pointer-events', '');
-      $('#service-deploying').hide();
-    }
-  }
-
   try {
-    fetch('/installer/check-deployment', {
+    fetch('/installer/check', {
       method: 'GET',
       headers: {
         Accept: 'application/json',
@@ -257,11 +228,33 @@ function checkDeployment() {
       .then((raw) => raw.json())
       .then((response) => {
         console.log(THIS, 'server returned:', response);
-        if (! 'service' in response) throw new Error('"service" deployable missing"!!!');
+        if (! response.deploy_state) throw new Error('Missing deployable.deploy_state');
 
         $('.deployable-loader').hide();
-
-        checkService(response.service);
+        $('#service-deploy .button').removeClass('loading');
+        $('#service-deploy').show();
+        if (response.deploy_state === 'NOT-DEPLOYED') {
+          $('#service-deployed').hide();
+          $('#service-open').hide();
+          $('#service-console-open').hide();
+          $('#service-deploy-button').show();
+          $('#service-deploy-button').css('pointer-events', '');
+          $('#service-redeploy-button').hide();
+          $('#service-undeploy-button').hide();
+        } else if (response.deploy_state === 'DEPLOYED') {
+          $('#service-deployed').show();
+          $('#service-open').show();
+          $('#service-open').attr('href', response.application_url);
+          $('#service-console-open').show();
+          $('#service-console-open').attr('href', `https://www.twilio.com/console/functions/api/start/${response.service_sid}`);
+          $('#service-deploy-button').hide();
+          $('#service-redeploy-button').show();
+          $('#service-redeploy-button').css('pointer-events', '');
+          $('#service-undeploy-button').show();
+          $('#service-undeploy-button').css('pointer-events', '');
+        }
+        $('#service-deploying').hide();
+        $(UI.information).text(JSON.stringify(response, undefined, 2));
       });
   } catch (err) {
     console.log(THIS, err);
@@ -276,8 +269,8 @@ function checkDeployment() {
  * action: DEPLOY|REDEPLOY|UNDEPLOY
  * --------------------------------------------------------------------------------
  */
-function deployService(e, action) {
-  const THIS = deployService.name;
+function deploy(e, action) {
+  const THIS = deploy.name;
 
   e.preventDefault();
 
@@ -304,7 +297,7 @@ function deployService(e, action) {
 
 //    return;
 
-  fetch('/installer/deploy-service', {
+  fetch('/installer/deploy', {
     method: 'POST',
     headers: {
       Accept: 'application/json',

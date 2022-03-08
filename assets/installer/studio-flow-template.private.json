@@ -41,8 +41,8 @@
       "name": "send_to_flex_agent",
       "properties": {
         "attributes": "{\"name\": \"{{trigger.message.ChannelAttributes.from}}\", \"channelType\": \"{{trigger.message.ChannelAttributes.channel_type}}\", \"channelSid\": \"{{trigger.message.ChannelSid}}\"}",
-        "workflow": "YOUR_WORKFLOW_SID",
-        "channel": "YOUR_TASK_CHANNEL_SID",
+        "workflow": "YOUR_FLEX_WORKFLOW_SID",
+        "channel": "YOUR_FLEX_TASK_CHANNEL_SID",
         "offset": {
           "y": 2660,
           "x": -1030

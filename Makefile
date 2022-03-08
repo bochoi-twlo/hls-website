@@ -210,7 +210,7 @@ run-serverless:
       echo ".env.localhost needs to be copied from .env and value set!!! aborting..."; \
     fi
 	@[[ -f .env.localhost ]]
-	twilio serverless:start --env=.env.localhost --load-local-env
+	twilio serverless:start --env=.env.localhost
 
 
 tail-log: get-environment-sid
