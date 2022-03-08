@@ -227,19 +227,17 @@ async function undeployService(context) {
   try {
     const client = context.getTwilioClient();
     // ---------- remove studio flow, if exists
-    const SERVICE_SID = await getParam(context, 'SERVICE_SID'); // will be null if not deployed
-    if (SERVICE_SID) {
+    const service_sid = await getParam(context, 'SERVICE_SID'); // will be null if not deployed
+    if (service_sid) {
       const response = await client.serverless.services(service_sid).remove();
-      console.log(THIS, response);
+      console.log(THIS, 'undeploy: ', response);
     }
 
-    return SERVICE_SID;
+    return service_sid;
 
   } catch (err) {
-    console.log(THIS, 'error');
+    console.log(THIS, err);
     throw new Error(err);
-  } finally {
-    console.log(THIS, 'sucess');
   }
 }
 
@@ -301,7 +299,7 @@ async function deployStudioFlow(context) {
     return STUDIO_FLOW_SID;
 
   } catch (err) {
-    console.log(THIS, 'error');
+    console.log(THIS, err);
     throw new Error(err);
   } finally {
     console.log(THIS, 'sucess');
@@ -320,7 +318,7 @@ async function undeployStudioFlow(context) {
     const STUDIO_FLOW_SID = await getParam(context, 'STUDIO_FLOW_SID'); // will be null if not deployed
     if (STUDIO_FLOW_SID) {
       const response = await client.studio.v1.flows(STUDIO_FLOW_SID).remove();
-      console.log(THIS, response);
+      console.log(THIS, 'undeploy: ', response);
     }
 
     // ---------- TODO: clear flex flow integration settings
@@ -329,9 +327,7 @@ async function undeployStudioFlow(context) {
     return STUDIO_FLOW_SID;
 
   } catch (err) {
-    console.log(THIS, 'error');
+    console.log(THIS, err);
     throw new Error(err);
-  } finally {
-    console.log(THIS, 'sucess');
   }
 }

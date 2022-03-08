@@ -96,9 +96,9 @@ async function getParam(context, key) {
 
         const services = await client.serverless.services.list();
         const service = services.find(s => s.uniqueName === context.APPLICATION_NAME);
-        await setParam(context, key, service.sid);
+        if (service) await setParam(context, key, service.sid);
 
-        return (service && service.sid) ? service.sid : null;
+        return (service) ? service.sid : null;
       }
 
       case 'ENVIRONMENT_SID': {
@@ -177,11 +177,11 @@ async function getParam(context, key) {
         if (context.FLEX_SID) return context.FLEX_SID;
 
         const flex = await client.flexApi.v1.configuration().fetch();
-        const sid = flex.flexServiceInstanceSid;
-
         assert(flex, `Flex instance not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
-        await setParam(context, key, sid);
-        return sid;
+
+        await setParam(context, key, flex.flexServiceInstanceSid);
+
+        return flex.flexServiceInstanceSid;
       }
 
       case 'FLEX_WEB_FLOW_SID': {
@@ -189,11 +189,12 @@ async function getParam(context, key) {
         if (context.FLEX_WEB_FLOW_SID) return context.FLEX_WEB_FLOW_SID;
 
         const flows = await client.flexApi.v1.flexFlow.list();
-        const sid = flows.filter(f => f.channelType === 'web')[0].sid;
+        const flow = flows.find(f => f.channelType === 'web');
+        assert(flow, `Flex web flow not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
 
-        assert(sid, `Flex web flow not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
-        await setParam(context, key, sid);
-        return sid;
+        await setParam(context, key, flow.sid);
+
+        return flow.sid;
       }
 
       case 'FLEX_WORKSPACE_SID': {
@@ -201,37 +202,39 @@ async function getParam(context, key) {
         if (context.FLEX_WORKSPACE_SID) return context.FLEX_WORKSPACE_SID;
 
         const flex = await client.flexApi.v1.configuration().fetch();
-        const sid = flex.taskrouterWorkspaceSid;
+        assert(flex, `Flex instance not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
 
-        assert(sid, `Taskrouter Workspace Sid not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
-        await setParam(context, key, sid);
-        return sid;
+        assert(flex.taskrouterWorkspaceSid, `Taskrouter Workspace Sid not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
+        await setParam(context, key, flex.taskrouterWorkspaceSid);
+        return flex.taskrouterWorkspaceSid;
       }
 
       case 'FLEX_WORKFLOW_SID': {
         // value set in .env takes precedence
         if (context.FLEX_WORKFLOW_SID) return context.FLEX_WORKFLOW_SID;
 
-        const STUDIO_FLOW_NAME = await getParam(context, 'STUDIO_FLOW_NAME');
-        const flows = await client.studio.flows.list();
-        const sid = flows.filter(f => f.friendlyName === STUDIO_FLOW_NAME)[0].sid;
+        const flex_workspace_sid = await getParam(context, 'FLEX_WORKSPACE_SID');
+        const flows = await client.taskrouter.v1.workspaces(flex_workspace_sid)
+          .workflows.list();
+        const flow = flows.find(f => f.friendlyName === context.FLEX_WORKFLOW_FNAME);
+        assert(flow, `Unable to find flex workspace workflow named ${context.FLEX_WORKFLOW_FNAME}`);
 
-        assert(sid, `Studio flow not found named ${STUDIO_FLOW_NAME}!!!`);
-        //await setParam(context, key, sid);
-        return sid;
+        await setParam(context, key, flow.sid);
+        return flow.sid;
       }
 
       case 'FLEX_TASK_CHANNEL_SID': {
         // value set in .env takes precedence
         if (context.FLEX_TASK_CHANNEL_SID) return context.FLEX_TASK_CHANNEL_SID;
 
-        const STUDIO_FLOW_NAME = await getParam(context, 'STUDIO_FLOW_NAME');
-        const flows = await client.studio.flows.list();
-        const sid = flows.filter(f => f.friendlyName === STUDIO_FLOW_NAME)[0].sid;
+        const flex_workspace_sid = await getParam(context, 'FLEX_WORKSPACE_SID');
+        const channels = await client.taskrouter.v1.workspaces(flex_workspace_sid)
+          .taskChannels.list();
+        const channel = channels.find(c => c.uniqueName === context.FLEX_TASK_CHANNEL_UNAME);
+        assert(channel, `Unable to find flex workspace task channel for ${context.FLEX_TASK_CHANNEL_UNAME}`);
 
-        assert(sid, `Studio flow not found named ${STUDIO_FLOW_NAME}!!!`);
-        //await setParam(context, key, sid);
-        return sid;
+        await setParam(context, key, channel.sid);
+        return channel.sid;
       }
 
       case 'STUDIO_FLOW_SID': {
@@ -240,11 +243,10 @@ async function getParam(context, key) {
 
         const STUDIO_FLOW_NAME = await getParam(context, 'STUDIO_FLOW_NAME');
         const flows = await client.studio.flows.list();
-        const sid = flows.filter(f => f.friendlyName === STUDIO_FLOW_NAME)[0].sid;
+        const flow = flows.find(f => f.friendlyName === STUDIO_FLOW_NAME);
 
-        assert(sid, `Studio flow not found named ${STUDIO_FLOW_NAME}!!!`);
-        //await setParam(context, key, sid);
-        return sid;
+        // if (flow) await setParam(context, key, flow.sid);
+        return (flow) ? flow.sid : null;
       }
 
       default:
@@ -275,7 +277,9 @@ async function getAllParams(context) {
 
   const keys_context = Object.keys(context);
   // keys defined in getParam function above
-  const keys_derived = [];
+  const keys_derived = [
+    'VERIFY_SID'
+  ];
 
   const keys_all = keys_context.concat(keys_derived).sort();
   try {
