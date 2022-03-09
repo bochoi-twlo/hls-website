@@ -16,9 +16,9 @@ output 'deploying studio flow...'
 SERVICE_NAME=$(basename `pwd`)
 output "SERVICE_NAME=${SERVICE_NAME}"
 
-FUNCTION_FNAME='/selectable-chat-messages'
-FLEX_WORKFLOW_FNAME='Assign to Anyone'
-FLEX_TASK_CHANNEL_UNAME='chat'
+FUNCTION_FNAME=/$(grep 'FUNCTION_FNAME=' ../../.env | sed 's/FUNCTION_FNAME=//')
+FLEX_WORKFLOW_FNAME=$(grep 'FLEX_WORKFLOW_FNAME=' ../../.env | sed 's/FLEX_WORKFLOW_FNAME=//')
+FLEX_TASK_CHANNEL_UNAME=$(grep 'FLEX_TASK_CHANNEL_UNAME=' ../../.env | sed 's/FLEX_TASK_CHANNEL_UNAME=//')
 
 STUDIO_FLOW_FNAME='hls-webchat'
 output "STUDIO_FLOW_FNAME=${STUDIO_FLOW_FNAME}"

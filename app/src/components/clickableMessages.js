@@ -71,12 +71,12 @@ class ClickableMessages extends React.Component {
                 dispatch({
                   type: 'SET_CLICKABLE_MESSAGES',
                   payload: { clickableMessages: [] }
-                })
+                });
                 // Once they click the button, we will post that as the message in the chat
                 FlexWebChat.manager.chatClient.getChannelBySid(channelSid)
                 .then(channel => {
                   channel.sendMessage(m.message);
-                });                 
+                });
               }} key={m.message}>
                 {m.message}
               </div>

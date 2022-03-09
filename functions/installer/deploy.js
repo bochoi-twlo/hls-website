@@ -154,7 +154,8 @@ async function getAssets() {
     name: ih.name.replace("index.html", ""),
   })));
   //console.log(allAssets);
-  return allAssets;
+  //return allAssets;
+  return assets;
 }
 
 /* --------------------------------------------------------------------------------

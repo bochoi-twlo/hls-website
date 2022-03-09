@@ -150,6 +150,8 @@ make-service-editable: get-service-sid
 
 
 deploy-service:
+	rm .twiliodeployinfo
+
 	twilio serverless:deploy --runtime node14 --override-existing-project
 
 
