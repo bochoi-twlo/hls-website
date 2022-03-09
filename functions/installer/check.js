@@ -27,13 +27,15 @@ exports.handler = async function (context, event, callback) {
     const service_sid        = await getParam(context, 'SERVICE_SID');
     const studio_flow_sid    = await getParam(context, 'STUDIO_FLOW_SID');
     const environment_domain = service_sid ? await getParam(context, 'ENVIRONMENT_DOMAIN') : null;
-    const application_url    = service_sid ? `https:/${environment_domain}/administration.html` : null;
+    const application_url    = service_sid ? `https:/${environment_domain}/index.html` : null;
+    const administration_url = service_sid ? `https:/${environment_domain}/administration.html` : null;
 
     const response = {
-        deploy_state: (service_sid && studio_flow_sid) ? 'DEPLOYED' : 'NOT-DEPLOYED',
-        service_sid: service_sid,
-        studio_flow_sid: studio_flow_sid,
-        application_url: application_url,
+      deploy_state: (service_sid && studio_flow_sid) ? 'DEPLOYED' : 'NOT-DEPLOYED',
+      service_sid: service_sid,
+      studio_flow_sid: studio_flow_sid,
+      application_url: application_url,
+      administration_url: administration_url,
     };
     console.log(THIS, response);
     return callback(null, response);
