@@ -9,9 +9,10 @@ body, #root {
 
 body {
   position: relative;
-  background-size: cover;
-  background-image: url("images/background.png");
-  background-color: #6D7697;
+  background-size: auto;
+  background-repeat: no-repeat;
+  background-image: url("images/owlhealth-1600x1100.png");
+  background-color: #FFFFFF;
 }
 
 body:after {
@@ -23,6 +24,6 @@ body:after {
   height: 182px;
   margin-left: -87px;
   margin-top: -91px;
-  opacity: 0.2;
+  opacity: 0.0;
   background: url("images/logo.svg");
 }

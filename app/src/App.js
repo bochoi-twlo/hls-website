@@ -65,9 +65,11 @@ class App extends React.Component {
 
     if (manager) {
       return (
-        <FlexWebChat.ContextProvider manager={manager}>
-          <FlexWebChat.RootContainer />
-        </FlexWebChat.ContextProvider>
+        <div>
+          <FlexWebChat.ContextProvider manager={manager}>
+            <FlexWebChat.RootContainer />
+          </FlexWebChat.ContextProvider>
+        </div>
       );
     }
 
