@@ -163,7 +163,7 @@
       "type": "send-and-wait-for-reply",
       "name": "send_service_options",
       "properties": {
-        "body": "To confirm, your full name is:\n{{widgets.enter_firstname.inbound.Body}}  {{widgets.enter_lastname.inbound.Body}},\nand your data of birth is:\n{{widgets.enter_dob.inbound.Body}} \nIs this correct?",
+        "body": "How can we help you today? Please select from the following options.",
         "from": "Owl Health",
         "service": "{{trigger.message.InstanceSid}}",
         "timeout": "1800",
