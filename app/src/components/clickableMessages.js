@@ -6,7 +6,7 @@ const wrapper = {
     display: 'block',
     overflowX: 'hidden',
     justifyContent: 'center',
-    width: '40%'
+    width: '50%', // bubble relative width
 }
 
 const bubble = {
@@ -48,8 +48,8 @@ class ClickableMessages extends React.Component {
             type: 'SET_CLICKABLE_MESSAGES',
             payload: {
               clickableMessages: channel.attributes.clickableMessages
-            }
-          })
+            },
+          });
         }
       });
     })

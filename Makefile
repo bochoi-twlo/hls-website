@@ -179,27 +179,22 @@ configure-flex-flow: get-flex-web-flow-sid get-flow-sid
 	--integration.flow-sid=$(STUDIO_FLOW_SID)
 
 
-deploy-all: build configure-webchat deploy-service configure-flex-flow
-	@echo deployed and configured!
-	@echo If initial deployment, also execute "make make-service-editable"
-
-
 package-flow:
 	assets/installer/package-studio-flow.private.sh
 
 
-deploy-flow: get-flex-web-flow-sid get-flow-sid
+deploy-flow:
 	assets/installer/deploy-studio-flow.private.sh
-
-	@echo configuring flex -to- studio-flow
-	twilio api:flex:v1:flex-flows:update --sid=$(FLEX_WEB_FLOW_SID) \
-	--integration-type=studio \
-	--integration.retry-count=3 \
-	--integration.flow-sid=$(STUDIO_FLOW_SID)
 
 
 undeploy-flow: get-flow-sid
 	twilio api:studio:v2:flows:remove --sid $(STUDIO_FLOW_SID)
+
+
+deploy-all: build configure-webchat deploy-service deploy-flow configure-flex-flow
+	@echo deployed and configured!
+	@echo If initial deployment, also execute "make make-service-editable"
+
 
 run-app:
 	cd app && npm install

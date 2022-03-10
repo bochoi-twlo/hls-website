@@ -10,8 +10,8 @@ const initialState = {
   showEndChatModal: false,
   channel: null,
   clickableMessages: [
-    {"key":"new", "message":"new"},
-    {"key":"existing", "message":"existing"}
+    {"key":"new", "message":"New"},
+    {"key":"existing", "message":"Existing"},
   ]
 };
 

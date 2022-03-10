@@ -16,9 +16,9 @@ output 'deploying studio flow...'
 SERVICE_NAME=$(basename `pwd`)
 output "SERVICE_NAME=${SERVICE_NAME}"
 
-FUNCTION_FNAME=/$(grep 'FUNCTION_FNAME=' ../../.env | sed 's/FUNCTION_FNAME=//')
-FLEX_WORKFLOW_FNAME=$(grep 'FLEX_WORKFLOW_FNAME=' ../../.env | sed 's/FLEX_WORKFLOW_FNAME=//')
-FLEX_TASK_CHANNEL_UNAME=$(grep 'FLEX_TASK_CHANNEL_UNAME=' ../../.env | sed 's/FLEX_TASK_CHANNEL_UNAME=//')
+FUNCTION_FNAME=/$(grep 'FUNCTION_FNAME=' .env | sed 's/FUNCTION_FNAME=//')
+FLEX_WORKFLOW_FNAME=$(grep 'FLEX_WORKFLOW_FNAME=' .env | sed 's/FLEX_WORKFLOW_FNAME=//')
+FLEX_TASK_CHANNEL_UNAME=$(grep 'FLEX_TASK_CHANNEL_UNAME=' .env | sed 's/FLEX_TASK_CHANNEL_UNAME=//')
 
 STUDIO_FLOW_FNAME='hls-webchat'
 output "STUDIO_FLOW_FNAME=${STUDIO_FLOW_FNAME}"
@@ -103,14 +103,14 @@ STUDIO_FLOW_SID=$(twilio api:studio:v2:flows:list -o=json \
 if [[ -z "${STUDIO_FLOW_SID}" ]]; then
   twilio api:studio:v2:flows:create \
   --friendly-name ${STUDIO_FLOW_FNAME} \
-  --commit-message "deployed via installer" \
+  --commit-message 'deployed via installer' \
   --status 'published' \
   --definition "`cat studio-flow-definition.json`"
   output "Studio flow definition deployed (created) to ${STUDIO_FLOW_FNAME}"
 else
   twilio api:studio:v2:flows:update \
-  --sid ${STUDIO_FLOW_SID}
-  --commit-message "deployed via installer" \
+  --sid ${STUDIO_FLOW_SID} \
+  --commit-message 'deployed via installer' \
   --status 'published' \
   --definition "`cat studio-flow-definition.json`"
   output "Studio flow definition deployed (updated) to ${STUDIO_FLOW_FNAME}"
