@@ -111,7 +111,7 @@
       "transitions": [
         {
           "event": "success",
-          "next": "full_name_sendreply"
+          "next": "send_service_options"
         },
         {
           "event": "fail",
@@ -119,7 +119,7 @@
         }
       ],
       "type": "run-function",
-      "name": "validate_name_SM",
+      "name": "selectable_service_options",
       "properties": {
         "parameters": [
           {
@@ -132,7 +132,7 @@
           },
           {
             "key": "selectableChatMessagesObject",
-            "value": "{\"clickableMessages\": [ {\"key\":\"yes{{flow.variables.count}}\", \"message\":\"yes\"}, {\"key\":\"no{{flow.variables.count}}\", \"message\":\"no\"}]}"
+            "value": "{\"clickableMessages\": [ {\"key\":\"hours\", \"message\":\"Hours\"}, {\"key\":\"parking\", \"message\":\"Parking\"}, {\"key\":\"scheduling\", \"message\":\"Scheduling\"}, {\"key\":\"consultation\", \"message\":\"Consultation\"}, {\"key\":\"other\", \"message\":\"Other\"}]}"
           }
         ],
         "url": "https://YOUR_ENVIRONMENT_DOMAIN/selectable-chat-messages",
@@ -149,7 +149,7 @@
       "transitions": [
         {
           "event": "incomingMessage",
-          "next": "validate_full_name"
+          "next": "choose_service_options"
         },
         {
           "event": "timeout",
@@ -161,7 +161,7 @@
         }
       ],
       "type": "send-and-wait-for-reply",
-      "name": "full_name_sendreply",
+      "name": "send_service_options",
       "properties": {
         "body": "To confirm, your full name is:\n{{widgets.enter_firstname.inbound.Body}}  {{widgets.enter_lastname.inbound.Body}},\nand your data of birth is:\n{{widgets.enter_dob.inbound.Body}} \nIs this correct?",
         "from": "Owl Health",
@@ -186,7 +186,7 @@
               "type": "equal_to",
               "friendly_name": "YES",
               "arguments": [
-                "{{widgets.full_name_sendreply.inbound.Body}}"
+                "{{widgets.send_service_options.inbound.Body}}"
               ],
               "value": "yes"
             }
@@ -200,7 +200,7 @@
               "type": "equal_to",
               "friendly_name": "NO",
               "arguments": [
-                "{{widgets.full_name_sendreply.inbound.Body}}"
+                "{{widgets.send_service_options.inbound.Body}}"
               ],
               "value": "no"
             }
@@ -210,9 +210,9 @@
         }
       ],
       "type": "split-based-on",
-      "name": "validate_full_name",
+      "name": "choose_service_options",
       "properties": {
-        "input": "{{widgets.full_name_sendreply.inbound.Body}}",
+        "input": "{{widgets.send_service_options.inbound.Body}}",
         "offset": {
           "y": 2260,
           "x": -2470
@@ -223,7 +223,7 @@
       "transitions": [
         {
           "event": "incomingMessage",
-          "next": "validate_name_SM"
+          "next": "selectable_service_options"
         },
         {
           "event": "timeout",
@@ -237,7 +237,7 @@
       "type": "send-and-wait-for-reply",
       "name": "enter_dob",
       "properties": {
-        "body": "Please enter your date of birth",
+        "body": "Please enter your date of birth (YYYY-mm-dd)",
         "from": "Owl Health",
         "service": "{{trigger.message.InstanceSid}}",
         "timeout": "1800",
