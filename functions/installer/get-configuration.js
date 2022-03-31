@@ -109,8 +109,8 @@ async function readConfigurationVariables() {
   const fs = require('fs')
   const configure_env = require("configure-env");
 
-  const payload = fs.readFileSync(path_env, 'utf8')
-  const configuration = configure_env.parser.parse(payload)
+  const payload = fs.readFileSync(path_env, 'utf8');
+  const configuration = configure_env.parser.parse(payload);
 
   return configuration.variables;
 }
