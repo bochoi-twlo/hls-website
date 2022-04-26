@@ -44,8 +44,8 @@
         "workflow": "YOUR_FLEX_WORKFLOW_SID",
         "channel": "YOUR_FLEX_TASK_CHANNEL_SID",
         "offset": {
-          "y": 2660,
-          "x": -1030
+          "y": 2940,
+          "x": -1040
         }
       }
     },
@@ -56,12 +56,11 @@
           "next": "enter_lastname"
         },
         {
-          "event": "timeout",
-          "next": "send_to_flex_agent"
+          "event": "timeout"
         },
         {
           "event": "deliveryFailure",
-          "next": "send_to_flex_agent"
+          "next": "send_thank_you"
         }
       ],
       "type": "send-and-wait-for-reply",
@@ -86,11 +85,11 @@
         },
         {
           "event": "timeout",
-          "next": "send_to_flex_agent"
+          "next": "send_thank_you"
         },
         {
           "event": "deliveryFailure",
-          "next": "send_to_flex_agent"
+          "next": "send_thank_you"
         }
       ],
       "type": "send-and-wait-for-reply",
@@ -115,7 +114,7 @@
         },
         {
           "event": "fail",
-          "next": "send_to_flex_agent"
+          "next": "send_thank_you"
         }
       ],
       "type": "run-function",
@@ -141,7 +140,7 @@
           "y": 1370,
           "x": -2180
         },
-        "function_sid": "YOUR_FUNCTION_SID",
+        "function_sid": "IS66f068a5873db84fade8589f9ecf39dd",
         "service_sid": "YOUR_SERVICE_SID"
       }
     },
@@ -153,11 +152,11 @@
         },
         {
           "event": "timeout",
-          "next": "send_to_flex_agent"
+          "next": "send_thank_you"
         },
         {
           "event": "deliveryFailure",
-          "next": "send_to_flex_agent"
+          "next": "send_thank_you"
         }
       ],
       "type": "send-and-wait-for-reply",
@@ -178,7 +177,7 @@
       "transitions": [
         {
           "event": "noMatch",
-          "next": "send_to_flex_agent"
+          "next": "send_thank_you"
         },
         {
           "conditions": [
@@ -192,7 +191,7 @@
             }
           ],
           "event": "match",
-          "next": "send_to_flex_agent"
+          "next": "send_thank_you"
         },
         {
           "conditions": [
@@ -227,11 +226,11 @@
         },
         {
           "event": "timeout",
-          "next": "send_to_flex_agent"
+          "next": "send_thank_you"
         },
         {
           "event": "deliveryFailure",
-          "next": "send_to_flex_agent"
+          "next": "send_thank_you"
         }
       ],
       "type": "send-and-wait-for-reply",
@@ -266,7 +265,7 @@
             }
           ],
           "event": "match",
-          "next": "send_to_flex_agent"
+          "next": "send_thank_you"
         }
       ],
       "type": "split-based-on",
@@ -299,6 +298,31 @@
           "y": 250,
           "x": -1310
         }
+      }
+    },
+    {
+      "transitions": [
+        {
+          "event": "sent",
+          "next": "send_to_flex_agent"
+        },
+        {
+          "event": "failed",
+          "next": "send_to_flex_agent"
+        }
+      ],
+      "type": "send-message",
+      "name": "send_thank_you",
+      "properties": {
+        "body": "Thank you! Please hold on for just a few moments while I connect you with someone who can help.",
+        "from": "Owl Health",
+        "service": "{{trigger.message.InstanceSid}}",
+        "to": "{{contact.channel.address}}",
+        "offset": {
+          "y": 2620,
+          "x": -1050
+        },
+        "channel": "{{trigger.message.ChannelSid}}"
       }
     }
   ],
