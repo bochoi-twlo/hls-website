@@ -40,7 +40,7 @@
       "type": "send-to-flex",
       "name": "send_to_flex_agent",
       "properties": {
-        "attributes": "{\"name\": \"{{trigger.message.ChannelAttributes.from}}\", \"channelType\": \"{{trigger.message.ChannelAttributes.channel_type}}\", \"channelSid\": \"{{trigger.message.ChannelSid}}\"}",
+        "attributes": "{\"dob\": \"{{widgets.enter_dob.inbound.Body}}\",\"name\": \"{{widgets.enter_firstname.inbound.Body}} {{widgets.enter_lastname.inbound.Body}}\", \"channelType\": \"{{trigger.message.ChannelAttributes.channel_type}}\", \"channelSid\": \"{{trigger.message.ChannelSid}}\", \"serviceType\":\"{{widgets.send_service_options.inbound.Body}}\"}",
         "workflow": "YOUR_FLEX_WORKFLOW_SID",
         "channel": "YOUR_FLEX_TASK_CHANNEL_SID",
         "offset": {
@@ -74,6 +74,7 @@
           "y": 530,
           "x": -1300
         },
+        "attributes": "",
         "channel": "{{trigger.message.ChannelSid}}"
       }
     },
