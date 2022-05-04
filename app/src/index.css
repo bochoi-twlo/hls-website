@@ -5,7 +5,7 @@
 body {
   margin: 0;
   font-size: 14px;
-  display: inline-block;
+  display: inline-grid;
   overflow-y: overlay;
 }
 
@@ -241,7 +241,7 @@ body {
 
 .main-bottom {
   width: 100%;
-  min-height: 650px;
+  min-height: 540px;
   left: 0px;
   bottom: 24px;
   background: linear-gradient(180deg, #E1E3EA 0%, rgba(225, 227, 234, 0) 100%);
