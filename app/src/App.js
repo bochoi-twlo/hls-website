@@ -26,7 +26,13 @@ class App extends React.Component {
     FlexWebChat.MainHeader.defaultProps.imageUrl = './images/logoOwlHealthSmall.png';
     FlexWebChat.MainHeader.defaultProps.titleText = "Chat with Us";
     FlexWebChat.MainHeader.defaultProps.showTitle = true;
-      
+
+    FlexWebChat.EntryPoint.defaultProps.hideTaglineWhenExpanded = false;
+    FlexWebChat.MainContainer.defaultProps.bottom = '26px';
+    FlexWebChat.MainContainer.defaultProps.right = '30px';
+
+
+
     FlexWebChat.Manager.create(configuration)
         .then(manager => {
 
