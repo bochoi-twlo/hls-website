@@ -44,6 +44,9 @@ body {
 .header-links div {
   color: #606B85;
   margin: 0px 15px;
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: #E1E3EA;
 }
 
 .header-nav {
@@ -110,6 +113,17 @@ body {
   color: #FFFFFF;
   text-shadow: 0px 1px 1px rgba(18, 28, 45, 0.2);
 }
+
+.header-nav .phone-btn:before {
+  float: left;
+  width: 14px;
+  height: 14px;
+  margin-right: 10px;
+  content: "";
+  background: url('./images/u_phone-alt.svg');
+}
+
+
 
 .main {
   display: inline-block;
@@ -364,7 +378,7 @@ body {
   align-items: flex-start;
   padding: 0px;
   margin-top: 21px;
-  gap: 8px;
+  gap: 28px;
   font-weight: 500;
   font-size: 14px;
   line-height: 17px;
@@ -376,6 +390,9 @@ body {
 
 .footer .links a {
   color: #606B85;
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: #CACDD8;  
 }
 
 .footer .chat {
