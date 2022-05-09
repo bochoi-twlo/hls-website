@@ -438,3 +438,39 @@ body {
   content: "";
   background: url('./images/u_comments-alt.svg');
 }
+
+/* Twilio chat */
+.Twilio-EntryPoint {
+  width: 160px;
+  box-shadow: none;
+}
+
+.Twilio-EntryPoint-Tagline {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 15px;
+  color: #FFFFFF;
+}
+
+.Twilio-EntryPoint-Tagline:before {
+  float: left;
+  width: 14px;
+  height: 14px;
+  margin-right: 10px;
+  content: "";
+  background: url('./images/u_comments-alt.svg');
+
+}
+
+.Twilio-EntryPoint-IconContainer svg {
+  display: none;
+}
+
+.Twilio-MainContainer {
+  width: 335px !important;
+  height: 600px !important;
+}
+
+
