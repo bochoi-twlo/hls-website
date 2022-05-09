@@ -5,7 +5,7 @@ var brandTextColor = "#ffffff";
 var personalizedColors = {
    darkBlueBackground: "#3C425C",
    whiteText: "#FFFFFF",
-   entryPointBackground: "#3C425C",
+   entryPointBackground: "#0263E0",
    lighterBackground: "#ecedf1",
    primaryButtonBackground: "#1976d2",
    primaryButtonColor: "#FFFFFF",
@@ -59,12 +59,20 @@ var brandedColors = {
         }
     },
 
+    MainContainer: {
+        Container: {
+        }
+    },
+
     EntryPoint: {
         Container: {
             background: personalizedColors.entryPointBackground,
-            color: personalizedColors.whiteText
-        }
-    },
+            color: personalizedColors.whiteText,
+            right: '124px',
+            bottom: '41px',
+            'z-index': '99'
+        },
+    }, 
 
     PreEngagementCanvas: {
         Container: {
