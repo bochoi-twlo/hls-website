@@ -473,4 +473,128 @@ body {
   height: 600px !important;
 }
 
+.Twilio-MainHeader {
+  font-size: 16px !important;
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 19px;
+}
+
+.Twilio-MainHeader div {
+  font-size: 16px !important;
+}
+
+.Twilio-MainHeader-end {
+  background: url('./images/bn-circle_discard.svg');
+  margin-right: 8px;
+  width: 24px;
+  height: 24px;
+}
+
+.Twilio-WelcomeMessage {
+  color:#606B85 !important;
+  font-size: 14px;
+  font-family: 'Inter';
+  margin-top: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+.Twilio-InlineMessage {
+  margin-top: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+
+.Twilio-WelcomeMessage-IconContainer {
+  width: 14px;
+  height: 14px;
+  margin-right: 10px;
+  background: url('./images/u_comments.svg');
+}
+
+.Twilio-WelcomeMessage-IconContainer svg {
+  display: none;
+}
+
+.Twilio-MessageBubble {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  border-radius: 8px !important;  
+}
+
+.Twilio-MessageBubble-Time {
+  color: #a6abb7;
+}
+
+.Twilio-MessageBubble-Header div {
+  font-size: 13px !important;
+}
+
+.Twilio-MessageBubble-Body {
+  font-size: 14px !important;
+}
+
+.Twilio-MessageListItem-BubbleContainer {
+  min-width: 230px !important;
+}
+
+.Twilio-MessageListItem {
+  margin-top: 12px !important;
+}
+
+.generatedAnswers {
+  width: 100% !important;
+  max-width: 280px;
+}
+
+.generatedAnswerBubble {
+  background: #EBF4FF !important;
+  border-radius: 8px !important;  
+  color: #0263E0 !important;
+  padding: 12px 12px !important;
+}
+
+.Twilio-MessageInput div, textarea {
+  font-size: 14px !important;
+}
+
+
+.Twilio-MessageInputArea-TextArea {
+  min-height: 44px;
+  font-family: 'Inter';
+  border-radius: 28px !important;
+  background: #F4F4F6;
+  border: 1px solid #E1E3EA;  
+}
+
+.Twilio-MessageInputArea-TextArea textarea {
+  padding-top: 12px;
+  padding-left: 16px;
+}
+
+.Twilio-MessageInput-SendButton {
+  height: 44px !important;
+  width: 44px !important;
+}
+
+.Twilio-MessageInput-SendButton:disabled {
+  opacity: 1 !important;
+}
+
+
+
+.Twilio-MainContainer{ 
+  border: 1px solid #E1E3EA !important;
+  box-shadow: 0px 4px 16px rgba(18, 28, 45, 0.2) !important;
+  border-radius: 8px !important;
+  
+  }
+
+.Twilio-MainContainer div, textarea { 
+  font-family: 'Inter';
+}
+
+
 
