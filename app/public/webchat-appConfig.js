@@ -1,8 +1,8 @@
 var appConfig = {
     //  change the your AccountSid
-    accountSid: "AC9505d3dbd8b75dc35123acdc3b78b054",
+    accountSid: "AC60d001fa4c322550ade0577eeb84a9dc",
     // change to your Flex Flow SID
-    flexFlowSid: "FO744469ea0d00d5f657ecfb2631f3fd1f",
+    flexFlowSid: "FOc970310964ed3d0bed78017164cb3e4c",
     colorTheme: {
         overrides: brandedColors
     }
