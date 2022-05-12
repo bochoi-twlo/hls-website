@@ -554,6 +554,7 @@ body {
   border-radius: 8px !important;  
   color: #0263E0 !important;
   padding: 12px 12px !important;
+  font-weight: 600;
 }
 
 .Twilio-MessageInput div, textarea {
