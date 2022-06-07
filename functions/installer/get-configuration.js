@@ -20,7 +20,7 @@
  * --------------------------------------------------------------------------------
  */
 const assert = require("assert");
-const { getParam, assertLocalhost } = require(Runtime.getFunctions()['helpers'].path);
+const { getParam } = require(Runtime.getFunctions()['helpers'].path);
 
 exports.handler = async function (context, event, callback) {
   const THIS = 'get-configuration:';

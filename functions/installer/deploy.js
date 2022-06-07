@@ -11,7 +11,7 @@
  * --------------------------------------------------------------------------------
  */
 const assert = require("assert");
-const { getParam, getAllParams } = require(Runtime.getFunctions()['helpers'].path);
+const { getParam } = require(Runtime.getFunctions()['helpers'].path);
 const { TwilioServerlessApiClient } = require('@twilio-labs/serverless-api');
 const { getListOfFunctionsAndAssets } = require('@twilio-labs/serverless-api/dist/utils/fs');
 const fs = require('fs');
@@ -36,26 +36,27 @@ exports.handler = async function(context, event, callback) {
 
       case 'DEPLOY':
       case 'REDEPLOY': {
+
+        // ---------- provision dependent resources
+        await provisionDependentResources(context);
+
+        // ---------- configure webchat client
         await configureWebChat(context);
 
+        // ---------- deploy serverless service
         const service_sid = await deployService(context, env);
         console.log(THIS, `Deployed: ${service_sid}`);
-
-        console.log(THIS, 'Make Twilio service editable ...');
         const client = context.getTwilioClient();
         await client.serverless
           .services(service_sid)
           .update({uiEditable: true});
+        console.log(THIS, 'Make Twilio service editable ...');
 
-        console.log(THIS, 'Provisioning dependent Twilio services');
-        const params = await getAllParams(context);
-        //console.log(THIS, params);
-
+        // ---------- deploy studio flow
         const studio_flow_sid = await deployStudioFlow(context);
         console.log(THIS, 'deployed Studio flow');
 
         console.log(THIS, `Completed deployment of ${application_name}`);
-
         const response = {
           status: event.action,
           deployables: [
@@ -96,6 +97,16 @@ exports.handler = async function(context, event, callback) {
   } finally {
     console.timeEnd(THIS);
   }
+}
+
+/* --------------------------------------------------------------------------------
+ * provisioned dependent services/resources
+ * --------------------------------------------------------------------------------
+ */
+async function provisionDependentResources(context) {
+  await getParam(context, 'VERIFY_SID');
+  await getParam(context, 'FLEX_WEB_FLOW_SID');
+  await getParam(context, 'FLEX_SMS_FLOW_SID');
 }
 
 /* --------------------------------------------------------------------------------
