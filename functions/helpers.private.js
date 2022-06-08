@@ -197,9 +197,12 @@ async function getParam(context, key) {
         assert(sflow, `Flex SMS Studio flow not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
         const studio_flow_sid = sflow.sid;
 
+        // fetch twilio phone as flex account should only have 1
+        const phones = await client.incomingPhoneNumbers.list();
+        const twilio_phone = phones[0].phoneNumber;
+
         // create legacy address
         const chat_service_sid = await getParam(context, 'FLEX_CHAT_SERVICE_SID');
-        const twilio_phone = await getParam(context, 'TWILIO_PHONE_NUMBER');
         console.log(`Create Conversation Address friendlyName=${FLEX_SMS_FLOW_FNAME}`);
         const newFlow = await client.flexApi.v1.flexFlow.create({
           friendlyName: FLEX_SMS_FLOW_FNAME,
