@@ -54,7 +54,7 @@ async function getParam(context, key) {
           (s) => s.friendlyName === context.APPLICATION_NAME
         );
 
-        await setParam(context, key, service.sid);
+        if (service) await setParam(context, key, service.sid);
         return service ? service.sid : null;
       }
 
