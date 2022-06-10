@@ -171,16 +171,18 @@ async function getParam(context, key) {
 
       case 'FLEX_SMS_FLOW_SID':
       {
+        const FLEX_SMS_FLOW_FNAME = 'Flex Messaging Channel Flow';
+
         // if not found, look for existing conversation address (2.0)
         const addresses = await client.conversations.addressConfigurations.list();
         const address = addresses.find(a => (a.type === 'sms' && a.friendlyName === FLEX_SMS_FLOW_FNAME));
 
         // if found, remove conversation address
         if (address) {
-          console.log(`Conversation Address friendlyName=${FLEX_SMS_FLOW_FNAME}`);
+          console.log(`Remove Conversation Address friendlyName=${FLEX_SMS_FLOW_FNAME}`);
           return address.sid;
         }
-
+        
         throw new Error("Unable to find sms conversations address!!! ABORTING!!!");
       }
 
