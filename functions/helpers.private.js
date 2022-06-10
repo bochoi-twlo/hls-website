@@ -177,7 +177,7 @@ async function getParam(context, key) {
         const addresses = await client.conversations.addressConfigurations.list();
         const address = addresses.find(a => (a.type === 'sms' && a.friendlyName === FLEX_SMS_FLOW_FNAME));
 
-        // if found, remove conversation address
+        // if found, return conversation sid
         if (address) {
           console.log(`Remove Conversation Address friendlyName=${FLEX_SMS_FLOW_FNAME}`);
           return address.sid;
