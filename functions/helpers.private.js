@@ -171,53 +171,17 @@ async function getParam(context, key) {
 
       case 'FLEX_SMS_FLOW_SID':
       {
-        // TODO: Note that Flex messaging 'legacy addresses' will be EOL end of 2023 July
-        const FLEX_SMS_FLOW_FNAME = 'Flex Messaging Channel Flow';
-
-        // look for existing legacy address
-        const flows = await client.flexApi.v1.flexFlow.list();
-        const flow = flows.find(f => f.channelType === 'sms');
-        if (flow) return flow.sid;
-
-        console.log("No Legacy Address for sms found.");
-
         // if not found, look for existing conversation address (2.0)
         const addresses = await client.conversations.addressConfigurations.list();
         const address = addresses.find(a => (a.type === 'sms' && a.friendlyName === FLEX_SMS_FLOW_FNAME));
 
         // if found, remove conversation address
         if (address) {
-          console.log(`Remove Conversation Address friendlyName=${FLEX_SMS_FLOW_FNAME}`);
-          await client.conversations.addressConfigurations(address.sid).remove();
+          console.log(`Conversation Address friendlyName=${FLEX_SMS_FLOW_FNAME}`);
+          return address.sid;
         }
 
-        // fetch studio flow for legacy address
-        const sflows = await client.studio.flows.list();
-        const sflow = sflows.find(f => f.friendlyName === 'Messaging Flow');
-        assert(sflow, `Flex SMS Studio flow not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
-        const studio_flow_sid = sflow.sid;
-
-        // fetch twilio phone as flex account should only have 1
-        const phones = await client.incomingPhoneNumbers.list();
-        const twilio_phone = phones[0].phoneNumber;
-
-        // create legacy address
-        const chat_service_sid = await getParam(context, 'FLEX_CHAT_SERVICE_SID');
-        console.log(`Create Conversation Address friendlyName=${FLEX_SMS_FLOW_FNAME}`);
-        const newFlow = await client.flexApi.v1.flexFlow.create({
-          friendlyName: FLEX_SMS_FLOW_FNAME,
-          chatServiceSid: chat_service_sid,
-          channelType: 'sms',
-          contactIdentity: twilio_phone,
-          enabled: true,
-          integrationType: 'studio',
-          'integration.flowSid': studio_flow_sid,
-          janitorEnabled: true,
-        });
-
-        if (!newFlow) throw new Error("Unable to create a Flex Legacy Address for sms!!! ABORTING!!!");
-
-        return newFlow.sid;
+        throw new Error("Unable to find sms conversations address!!! ABORTING!!!");
       }
 
       case 'FLEX_WORKSPACE_SID':
