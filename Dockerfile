@@ -1,7 +1,7 @@
 # --------------------------------------------------------------------------------
 # Dockerfile for local installer
 # --------------------------------------------------------------------------------
-FROM twilio/twilio-cli:3.2.0
+FROM twilio/twilio-cli:3.4.2
 
 RUN twilio plugins:install @twilio-labs/plugin-serverless
 
