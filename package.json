@@ -3,15 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "twilio": "3.75",
-    "@twilio-labs/serverless-api": "5.4.0",
-    "@twilio/runtime-handler": "1.2.2",
+    "@twilio-labs/serverless-api": "5.4.2",
+    "@twilio/runtime-handler": "^1.0.2",
     "configure-env": "2.0.0-1",
     "jsonwebtoken": "8.5.1",
+    "twilio": "3.77.3",
     "twilio-flex-token-validator": "1.5.6"
   },
   "devDependencies": {
-    "twilio-run": "3.4.1"
+    "twilio-run": "^1.1.2"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

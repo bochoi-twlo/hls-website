@@ -22,7 +22,8 @@ BLUEPRINT_NAME   := $(shell basename `pwd`)
 SERVICE_NAME     := $(BLUEPRINT_NAME)
 STUDIO_FLOW_NAME := hls-webchat
 GIT_REPO_URL     := $(shell git config --get remote.origin.url)
-INSTALLER_NAME   := hls-website-installer
+VERSION          := $(shell jq --raw-output .version package.json)
+INSTALLER_NAME   := twiliohls/hls-website-installer
 CPU_HARDWARE     := $(shell uname -m)
 DOCKER_EMULATION := $(shell [[ `uname -m` == "arm64" ]] && echo --platform linux/amd64)
 $(info ================================================================================)
@@ -45,11 +46,16 @@ targets:
 
 
 installer-build-github:
-	docker build --tag $(INSTALLER_NAME) $(DOCKER_EMULATION) --no-cache $(GIT_REPO_URL)#main
+	docker build --tag $(INSTALLER_NAME):$(VERSION) $(DOCKER_EMULATION) --no-cache $(GIT_REPO_URL)#main
 
 
 installer-build-local:
-	docker build --tag $(INSTALLER_NAME) $(DOCKER_EMULATION) --no-cache .
+	docker build --tag $(INSTALLER_NAME):$(VERSION) $(DOCKER_EMULATION) --no-cache .
+
+
+installer-push:
+	docker push $(INSTALLER_NAME)
+	open -a "Google Chrome" https://hub.docker.com/r/$(INSTALLER_NAME)
 
 
 installer-run:
@@ -132,6 +138,8 @@ get-flex-web-flow-sid:
 
 
 clean:
+	rm -rf node_modules/
+	rm -rf app/node_modules/
 	@echo "remove react build files/directory"
 	rm -f -r app/build
 	@echo "remove react build files in assets"
