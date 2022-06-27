@@ -54,7 +54,7 @@ installer-build-local:
 
 
 installer-push:
-	docker push $(INSTALLER_NAME)
+	docker push $(INSTALLER_NAME):$(VERSION)
 	open -a "Google Chrome" https://hub.docker.com/r/$(INSTALLER_NAME)
 
 
