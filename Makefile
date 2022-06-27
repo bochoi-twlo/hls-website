@@ -56,7 +56,9 @@ installer-build-local:
 
 
 installer-push:
+	docker login --username twiliohls
 	docker push $(INSTALLER_TAG)
+	docker logout
 	open -a "Google Chrome" https://hub.docker.com/r/twiliohls/$(INSTALLER_NAME)
 
 
