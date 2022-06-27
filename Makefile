@@ -59,7 +59,7 @@ installer-push:
 
 
 installer-run:
-	docker run --name $(INSTALLER_NAME) --rm --publish 3000:3000 $(DOCKER_EMULATION) \
+	docker run --name $(INSTALLER_NAME):$(VERSION) --rm --publish 3000:3000 $(DOCKER_EMULATION) \
 	--env ACCOUNT_SID=$(TWILIO_ACCOUNT_SID) --env AUTH_TOKEN=$(TWILIO_AUTH_TOKEN) \
 	--interactive --tty $(INSTALLER_NAME)
 
