@@ -57,7 +57,7 @@ installer-build-local:
 
 installer-push:
 	docker push $(INSTALLER_TAG)
-	open -a "Google Chrome" https://hub.docker.com/r/$(INSTALLER_NAME)
+	open -a "Google Chrome" https://hub.docker.com/r/twiliohls/$(INSTALLER_NAME)
 
 
 installer-run:
