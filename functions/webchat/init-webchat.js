@@ -1,11 +1,13 @@
 const axios = require("axios");
 const { getParam } = require(Runtime.getFunctions()["helpers"].path);
-const Twilio = require('twilio')
+const { createToken } = require(Runtime.getFunctions()[
+  "webchat/helpers/createToken"
+].path);
+const { TOKEN_TTL_IN_SECONDS } = require(Runtime.getFunctions()[
+  "webchat/constants"
+].path);
 
-const contactWebchatOrchestrator = async (
-  context,
-  customerFriendlyName
-) => {
+const contactWebchatOrchestrator = async (context, customerFriendlyName) => {
   const params = new URLSearchParams();
   params.append("AddressSid", await getParam(context, "CHAT_ADDRESS_SID"));
   params.append("ChatFriendlyName", "Webchat widget");
@@ -46,11 +48,12 @@ const contactWebchatOrchestrator = async (
   };
 };
 
-const sendUserMessage = (context, conversationSid, identity, messageBody) => {
-  return context.getTwilioClient()
+const sendUserMessage = async (context, conversationSid, identity) => {
+  await context
+    .getTwilioClient()
     .conversations.conversations(conversationSid)
     .messages.create({
-      body: messageBody,
+      body: "Hello, I would like to speak with a representative.",
       author: identity,
       xTwilioWebhookEnabled: true, // trigger webhook
     })
@@ -81,28 +84,23 @@ exports.handler = async function (context, event, callback) {
   // Hit Webchat Orchestration endpoint to generate conversation and get customer participant sid
   try {
     const result = await contactWebchatOrchestrator(
-      request,
-      customerFriendlyName,
-      context
+      context,
+      customerFriendlyName
     );
     ({ identity, conversationSid } = result);
     // Generate token for customer
-    const token = createToken(identity);
-
+    const token = createToken(context, identity);
     // OPTIONAL — if user query is defined
-    sendUserMessage(context, conversationSid, identity, request.body.formData.query);
-
+    await sendUserMessage(context, conversationSid, identity);
     response.setBody({
-      error: false,
-      result: {
-        token,
-        conversationSid,
-        expiration: Date.now() + TOKEN_TTL_IN_SECONDS * 1000,
-      },
+      token,
+      conversationSid,
+      expiration: Date.now() + TOKEN_TTL_IN_SECONDS * 1000,
     });
 
     return callback(null, response);
   } catch (error) {
+    console.log(error);
     console.error(error);
     response.setStatusCode(500);
     response.setBody({

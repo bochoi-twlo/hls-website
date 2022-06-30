@@ -1,35 +1,58 @@
 const jwt = require("jsonwebtoken");
-const { TOKEN_TTL_IN_SECONDS } = require("../constants");
-const { createToken } = require("../helpers/createToken");
-const { logInitialAction, logFinalAction, logInterimAction } = require("../helpers/logs");
+const Twilio = require("twilio");
+const { TOKEN_TTL_IN_SECONDS } = require(Runtime.getFunctions()['constants'].path);
+const { createToken } = require(Runtime.getFunctions()['helpers/createToken'].path);
 
 // const refreshTokenController = async (request, response) => {
 exports.handler = async function (context, event, callback) {
-    let providedIdentity;
+  const response = new Twilio.Response();
+  const client = context.getTwilioClient();
+  
+  response.appendHeader("Access-Control-Allow-Origin", "*");
+  response.appendHeader("Access-Control-Allow-Methods", "OPTIONS, POST");
+  response.appendHeader("Content-Type", "application/json");
+  response.appendHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, Content-Length, X-Requested-With, User-Agent"
+  );
+  response.setStatusCode(200);
+  
 
-    try {
-        const validatedToken = await new Promise((res, rej) =>
-            jwt.verify(request.body.token, process.env.API_SECRET, {}, (err, decoded) => {
-                if (err) return rej(err);
-                return res(decoded);
-            })
-        );
-        providedIdentity = validatedToken?.grants?.identity;
-    } catch (e) {
-        console.error(`Invalid token provided: ${e.message}`);
-        return response.sendStatus(403);
-    }
+  let providedIdentity;
 
-    logInterimAction("Token is valid for", providedIdentity);
+  try {
+    const validatedToken = await new Promise((res, rej) =>
+      jwt.verify(
+        request.body.token,
+        context.API_SECRET,
+        {},
+        (err, decoded) => {
+          if (err) return rej(err);
+          return res(decoded);
+        }
+      )
+    );
+    providedIdentity = validatedToken?.grants?.identity;
 
-    const refreshedToken = createToken(providedIdentity);
+    console.log(`Token valid for ${providedIdentity}`);
 
-    response.send({
-        token: refreshedToken,
-        expiration: Date.now() + TOKEN_TTL_IN_SECONDS * 1000
+    const refreshedToken = createToken(context, client, providedIdentity);
+
+    response.setBody({
+      token: refreshedToken,
+      expiration: Date.now() + TOKEN_TTL_IN_SECONDS * 1000,
     });
-
-    logFinalAction("Token refreshed");
+    return callback(null, response);
+  } catch (e) {
+    console.error(`Invalid token provided: ${e.message}`);
+    response.setStatusCode(403);
+    response.setBody({
+      error: true,
+      errorObject:
+        "Invalid token provided. Check Twilio Console for more information.",
+    });
+    return callback(null, response);
+  }
 };
 
 module.exports = { refreshTokenController };
