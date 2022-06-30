@@ -7,7 +7,7 @@ const contactWebchatOrchestrator = async (
   customerFriendlyName
 ) => {
   const params = new URLSearchParams();
-  params.append("AddressSid", await getParam(context, "ADDRESS_SID"));
+  params.append("AddressSid", await getParam(context, "CHAT_ADDRESS_SID"));
   params.append("ChatFriendlyName", "Webchat widget");
   params.append("CustomerFriendlyName", customerFriendlyName);
   params.append(

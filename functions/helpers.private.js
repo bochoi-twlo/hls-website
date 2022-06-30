@@ -112,20 +112,27 @@ async function getParam(context, key) {
         return context.API_SECRET;
       }
 
-      case "ADDRESS_SID": {
-        if (context.ADDRESS_SID) return context.ADDRESS_SID;
+      case "CHAT_ADDRESS_SID": {
 
-        const newFlow = await client.flexApi.v1.flexFlow.create({
-          friendlyName: FLEX_WEB_FLOW_FNAME,
-          chatServiceSid: await getParam(context, "CONVERSATIONS_SID"),
-          channelType: "web",
-          enabled: true,
-          integrationType: "studio",
-          "integration.flowSid": studio_flow_sid,
-          janitorEnabled: true,
-        });
+        if (context.CHAT_ADDRESS_SID) return context.CHAT_ADDRESS_SID;
 
+        const CHAT_ADDRESS_FNAME = await getParam(context, "CHAT_ADDRESS_FNAME");
 
+        const addrSid = await client.conversations.addressConfigurations
+          .list({ limit: 20 })
+          .then((addresses) => {
+            const chatAddress = addresses.find(
+              (addr) => addr.friendlyName === CHAT_ADDRESS_FNAME
+            );
+            if (!chatAddress)
+              throw new Error(
+                `Could not find address with friendlyName ${CHAT_ADDRESS_FNAME}`
+              );
+            return chatAddress.sid;
+          });
+
+        await setParam(context, "CHAT_ADDRESS_SID", addrSid);
+        return addrSid;
       }
 
       case "CONVERSATIONS_SERVICE_SID": {
