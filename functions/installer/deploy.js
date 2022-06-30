@@ -63,7 +63,7 @@ exports.handler = async function (context, event, callback) {
           console.log(THIS, "deployed Studio flow");
 
           // ---------- Changes the default Flex Conversations address with type "Chat" to use studio flow.
-          await configureConversationsChatAddress()
+          await configureConversationsChatAddress(context)
 
           console.log(THIS, `Completed deployment of ${application_name}`);
           const response = {
@@ -113,11 +113,13 @@ exports.handler = async function (context, event, callback) {
  * Mutates default Flex Conversations (Chat) Address to use studio flow
  * --------------------------------------------------------------------------------
  */
-async function configureConversationsChatAddress() {
+async function configureConversationsChatAddress(context) {
   const addressSid = await getParam(context, "CHAT_ADDRESS_SID");
   const studioFlowSid = await getParam(context, "STUDIO_FLOW_SID");
 
-  await newClient.conversations
+  const client = context.getTwilioClient();
+
+  await client.conversations
     .addressConfigurations(addressSid)
     .update({
       autoCreation: {
