@@ -5,13 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Owl Health</title>
     <script src="/webchat-branding.js"></script>
-    <script src="/webchat-appConfig.js"></script>
-    <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
+     <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
+
+     <script defer="defer" src="/main.js"></script>
   </head>
   <body>
-
-
-
 </head>
 
 
@@ -116,6 +114,7 @@
 
 
     <div id="root"></div>
+    <div id="root2"></div>
     <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.
@@ -126,5 +125,11 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        console.log(Twilio)
+          Twilio.initWebchat({ serverUrl: "http://localhost:3001", theme: { isLight: !0 } });
+      });
+  </script>
   </body>
 </html>
