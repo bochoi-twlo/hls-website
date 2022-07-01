@@ -89,7 +89,7 @@ exports.handler = async function (context, event, callback) {
     );
     ({ identity, conversationSid } = result);
     // Generate token for customer
-    const token = createToken(context, identity);
+    const token = await createToken(context, identity);
     // OPTIONAL — if user query is defined
     await sendUserMessage(context, conversationSid, identity);
     response.setBody({

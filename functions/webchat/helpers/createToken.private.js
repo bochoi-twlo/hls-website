@@ -2,13 +2,13 @@ const { TOKEN_TTL_IN_SECONDS } = require(Runtime.getFunctions()['webchat/constan
 const { getParam } = require(Runtime.getFunctions()['helpers'].path);
 const jwt = require("jsonwebtoken");
 
-const createToken = (context, identity) => {
+const createToken = async (context, identity) => {
     console.log("Creating new token");
     const { AccessToken } = Twilio.jwt;
     const { ChatGrant } = AccessToken;
 
     const chatGrant = new ChatGrant({
-        serviceSid: await getParam(context, "CONVERSATIONS_SERVICE_SID") //context.CONVERSATIONS_SERVICE_SID
+        serviceSid: await getParam(context, 'CONVERSATIONS_SERVICE_SID')
     });
 
     const token = new AccessToken(context.ACCOUNT_SID, await getParam(context, "API_KEY"), await getParam(context, "API_SECRET"), {
