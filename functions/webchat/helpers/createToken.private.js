@@ -1,4 +1,5 @@
 const { TOKEN_TTL_IN_SECONDS } = require(Runtime.getFunctions()['webchat/constants'].path);
+const { getParam } = require(Runtime.getFunctions()['helpers'].path);
 const jwt = require("jsonwebtoken");
 
 const createToken = (context, identity) => {
@@ -7,10 +8,10 @@ const createToken = (context, identity) => {
     const { ChatGrant } = AccessToken;
 
     const chatGrant = new ChatGrant({
-        serviceSid: context.CONVERSATIONS_SERVICE_SID
+        serviceSid: await getParam(context, "CONVERSATIONS_SERVICE_SID") //context.CONVERSATIONS_SERVICE_SID
     });
 
-    const token = new AccessToken(context.ACCOUNT_SID, context.API_KEY, context.API_SECRET, {
+    const token = new AccessToken(context.ACCOUNT_SID, await getParam(context, "API_KEY"), await getParam(context, "API_SECRET"), {
         identity,
         ttl: TOKEN_TTL_IN_SECONDS
     });
