@@ -1,20 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Owl Health</title>
-    <script src="/webchat-branding.js"></script>
-     <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
 
-     <script defer="defer" src="/main.js"></script>
-  </head>
-  <body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Owl Health</title>
+  <script src="/webchat-branding.js"></script>
+  <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
+
+  <script defer="defer" src="/main.js"></script>
 </head>
 
-
-
 <body>
+  </head>
+
+
+
+  <body>
     <div class="header">
       <div class="header-logo"></div>
       <div class="header-links">
@@ -38,7 +40,8 @@
         </div>
         <div class="main-top-title-bg"></div>
         <div class="main-top-subtitle">
-          We know it is crucial to keep you informed and working as an active participant in your family's care. This means consistent
+          We know it is crucial to keep you informed and working as an active participant in your family's care. This
+          means consistent
           engagement & improved communications.
         </div>
         <div class="main-top-plates">
@@ -66,7 +69,8 @@
             <div class="main-bottom-plate-img family-img"></div>
             <div class="main-bottom-plate-descr">
               <p class="main-bottom-plate-title">Patients and Families</p>
-              <p class="main-bottom-plate-text">Care planning, pricing information, forms, and other resources for patients and care-givers.</p>
+              <p class="main-bottom-plate-text">Care planning, pricing information, forms, and other resources for
+                patients and care-givers.</p>
               <div class="main-bottom-plate-btn">Access Resources</div>
             </div>
           </div>
@@ -106,8 +110,8 @@
         </div>
       </div>
       <div class="chat">
-       <!-- <div class="chat-hint">Need some help? Chat with us!</div> -->
-       <!-- <div class="chat-btn">Chat with us</div> -->
+        <!-- <div class="chat-hint">Need some help? Chat with us!</div> -->
+        <!-- <div class="chat-btn">Chat with us</div> -->
 
       </div>
     </div>
@@ -127,9 +131,13 @@
     -->
     <script>
       window.addEventListener("DOMContentLoaded", () => {
-        console.log(Twilio)
-          Twilio.initWebchat({ serverUrl: "http://localhost:3001", theme: { isLight: !0 } });
+        Twilio.initWebchat({
+          serverUrl: window.location.origin.includes("localhost") ?
+            "http://localhost:3001" :
+            window.location.origin, theme: { isLight: !0 }
+        });
       });
-  </script>
+    </script>
   </body>
+
 </html>
