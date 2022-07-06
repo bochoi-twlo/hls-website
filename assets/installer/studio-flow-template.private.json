@@ -67,7 +67,7 @@
       "name": "enter_firstname",
       "properties": {
         "body": "Please enter your first name",
-        "from": "Owl Health",
+        "from": "Cloud City Healthcare",
         "service": "{{trigger.message.InstanceSid}}",
         "timeout": "1800",
         "offset": {
@@ -97,7 +97,7 @@
       "name": "enter_lastname",
       "properties": {
         "body": "Please enter your last name",
-        "from": "Owl Health",
+        "from": "Cloud City Healthcare",
         "service": "{{trigger.message.InstanceSid}}",
         "timeout": "1800",
         "offset": {
@@ -164,7 +164,7 @@
       "name": "send_service_options",
       "properties": {
         "body": "How can we help you today? Please select from the following options.",
-        "from": "Owl Health",
+        "from": "Cloud City Healthcare",
         "service": "{{trigger.message.InstanceSid}}",
         "timeout": "1800",
         "offset": {
@@ -238,7 +238,7 @@
       "name": "enter_dob",
       "properties": {
         "body": "Please enter your date of birth (YYYY-mm-dd)",
-        "from": "Owl Health",
+        "from": "Cloud City Healthcare",
         "service": "{{trigger.message.InstanceSid}}",
         "timeout": "1800",
         "offset": {
@@ -316,7 +316,7 @@
       "name": "send_thank_you",
       "properties": {
         "body": "Thank you! Please hold on for just a few moments while I connect you with someone who can help.",
-        "from": "Owl Health",
+        "from": "Cloud City Healthcare",
         "service": "{{trigger.message.InstanceSid}}",
         "to": "{{contact.channel.address}}",
         "offset": {
