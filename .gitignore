@@ -140,3 +140,6 @@ dist
 
 # nvm
 .nvmrc
+
+# vscode settings
+.vscode/

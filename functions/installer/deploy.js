@@ -62,8 +62,8 @@ exports.handler = async function (context, event, callback) {
           const studio_flow_sid = await deployStudioFlow(context);
           console.log(THIS, "deployed Studio flow");
 
-          // ---------- Changes the default Flex Conversations address with type "Chat" to use studio flow.
-          await configureConversationsChatAddress(context)
+          // ---------- Changes the default Flex Conversations address with type "Chat" to use studio flow, removes legacy addresses
+          await configureConversationsChatAddress(context);
 
           console.log(THIS, `Completed deployment of ${application_name}`);
           const response = {
@@ -110,7 +110,7 @@ exports.handler = async function (context, event, callback) {
 };
 
 /* --------------------------------------------------------------------------------
- * Mutates default Flex Conversations (Chat) Address to use studio flow
+ * Mutates default Flex Conversations (Chat) Address to use studio flow, remove legacy addresses
  * --------------------------------------------------------------------------------
  */
 async function configureConversationsChatAddress(context) {
@@ -118,6 +118,18 @@ async function configureConversationsChatAddress(context) {
   const studioFlowSid = await getParam(context, "STUDIO_FLOW_SID");
 
   const client = context.getTwilioClient();
+
+  //remove legacy addresses
+  const legacyAddrs = await client.flexApi.v1.flexFlow
+    .list()
+    .then((resp) =>
+      resp.map((addr) => ({ fname: addr.friendlyName, sid: addr.sid }))
+    )
+    .catch((err) => console.log(`Could not remove legacy addresses: ${err}`));
+  for await (const addr of legacyAddrs) {
+    console.log(`Removing legacy address ${addr.fname}...`);
+    await client.flexApi.v1.flexFlow(addr.sid).remove();
+  }
 
   await client.conversations
     .addressConfigurations(addressSid)
@@ -131,6 +143,11 @@ async function configureConversationsChatAddress(context) {
     })
     .then(() =>
       console.log("Successfully changed default Flex Chat to use studio flow.")
+    )
+    .catch((err) =>
+      console.log(
+        `Could not update Flex Chat to use hls-webchat studio flow: ${err}`
+      )
     );
 }
 
