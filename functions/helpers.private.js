@@ -53,19 +53,33 @@ async function getParam(context, key) {
   try {
     switch (key) {
       case "SERVICE_SID": {
+        // will throw error when running on localhost, so lookup by name if localhost
+        if (
+          !context.DOMAIN_NAME.startsWith("localhost:") &&
+          context.SERVICE_SID
+        )
+          return context.SERVICE_SID;
+
         const services = await client.serverless.services.list();
         const service = services.find(
-          (s) => s.friendlyName === context.APPLICATION_NAME
+          (s) => s.uniqueName === context.APPLICATION_NAME
         );
 
-        if (service) await setParam(context, key, service.sid);
-        return service ? service.sid : null;
+        return service && service.sid ? service.sid : null;
       }
 
       case "ENVIRONMENT_SID": {
-        const service_sid = await getParam(context, "SERVICE_SID");
-        if (service_sid === null) return null; // service not yet deployed
+        // will throw error when running on localhost, so lookup by name if localhost
+        if (
+          !context.DOMAIN_NAME.startsWith("localhost:") &&
+          context.ENVIRONMENT_SID
+        )
+          return context.ENVIRONMENT_SID;
 
+        const service_sid = await getParam(context, "SERVICE_SID");
+        if (service_sid === null) {
+          return null; // service not yet deployed
+        }
         const environments = await client.serverless
           .services(service_sid)
           .environments.list({ limit: 1 });
@@ -113,10 +127,12 @@ async function getParam(context, key) {
       }
 
       case "CHAT_ADDRESS_SID": {
-
         if (context.CHAT_ADDRESS_SID) return context.CHAT_ADDRESS_SID;
 
-        const CHAT_ADDRESS_FNAME = await getParam(context, "CHAT_ADDRESS_FNAME");
+        const CHAT_ADDRESS_FNAME = await getParam(
+          context,
+          "CHAT_ADDRESS_FNAME"
+        );
 
         const addrSid = await client.conversations.addressConfigurations
           .list({ limit: 20 })
@@ -401,7 +417,8 @@ async function getParam(context, key) {
  */
 async function setParam(context, key, value) {
   if (context.DOMAIN_NAME.startsWith("localhost:")) return null; // do nothing on localhost
-  if (context.service_sid) return null; // do nothing is service is not deployed
+  const service_sid = await getParam(context, "SERVICE_SID");
+  if (!service_sid) return null; // do nothing is service is not deployed
   const environment_sid = await getParam(context, "ENVIRONMENT_SID");
 
   const client = context.getTwilioClient();
