@@ -10,8 +10,8 @@ import App from './App';
 import registerServiceWorker from './registerServiceWorker';
 
 ReactDOM.render(
-    <App configuration={window.appConfig} />,
-    document.getElementById("root")
+    <App />,
+    document.getElementById("root2")
 );
 
 registerServiceWorker();

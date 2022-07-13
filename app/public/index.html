@@ -56,6 +56,7 @@
             </div>
           </div>
         </div>
+        
         <div class="main-bottom">
           <div class="main-bottom-plates">
 
@@ -107,21 +108,30 @@
         <div class="chat">
          <!-- <div class="chat-hint">Need some help? Chat with us!</div> -->
          <!-- <div class="chat-btn">Chat with us</div> -->
-
         </div>
       </div>
 
 
-      <div id="root"></div>
-      <!--
-        This HTML file is a template.
-        If you open it directly in the browser, you will see an empty page.
-
+    <div id="root"></div>
+    <div id="root2"></div>
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
         You can add webfonts, meta tags, or analytics to this file.
         The build step will place the bundled scripts into the <body> tag.
 
-        To begin the development, run `npm start` or `yarn start`.
-        To create a production bundle, use `npm run build` or `yarn build`.
-      -->
-    </body>
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        Twilio.initWebchat({
+          serverUrl: window.location.origin.includes("localhost") ?
+            "http://localhost:3001" :
+            window.location.origin, theme: { isLight: !0 }
+        });
+      });
+    </script>
+  </body>
+
 </html>

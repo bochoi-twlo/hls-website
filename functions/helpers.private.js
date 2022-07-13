@@ -18,7 +18,7 @@ const assert = require("assert");
  * --------------------------------------------------------------------------------
  */
 function isLocalhost(context) {
-  return context.DOMAIN_NAME.startsWith('localhost:');
+  return context.DOMAIN_NAME.startsWith("localhost:");
 }
 
 /* --------------------------------------------------------------------------------
@@ -32,8 +32,14 @@ function isLocalhost(context) {
  * --------------------------------------------------------------------------------
  */
 async function getParam(context, key) {
-  assert(context.APPLICATION_NAME         , "undefined .env environment variable APPLICATION_NAME!!!");
-  assert(context.CUSTOMER_NAME            , "undefined .env environment variable CUSTOMER_NAME!!!");
+  assert(
+    context.APPLICATION_NAME,
+    "undefined .env environment variable APPLICATION_NAME!!!"
+  );
+  assert(
+    context.CUSTOMER_NAME,
+    "undefined .env environment variable CUSTOMER_NAME!!!"
+  );
 
   if (
     key !== "SERVICE_SID" && // avoid warning
@@ -46,186 +52,351 @@ async function getParam(context, key) {
   const client = context.getTwilioClient();
   try {
     switch (key) {
+      case "SERVICE_SID": {
+        // will throw error when running on localhost, so lookup by name if localhost
+        if (
+          !context.DOMAIN_NAME.startsWith("localhost:") &&
+          context.SERVICE_SID
+        )
+          return context.SERVICE_SID;
 
-      case 'SERVICE_SID':
-      {
         const services = await client.serverless.services.list();
         const service = services.find(
-          (s) => s.friendlyName === context.APPLICATION_NAME
+          (s) => s.uniqueName === context.APPLICATION_NAME
         );
 
-        if (service) await setParam(context, key, service.sid);
-        return service ? service.sid : null;
+        return service && service.sid ? service.sid : null;
       }
 
-      case 'ENVIRONMENT_SID':
-      {
-        const service_sid = await getParam(context, 'SERVICE_SID');
-        if (service_sid === null) return null; // service not yet deployed
+      case "ENVIRONMENT_SID": {
+        // will throw error when running on localhost, so lookup by name if localhost
+        if (
+          !context.DOMAIN_NAME.startsWith("localhost:") &&
+          context.ENVIRONMENT_SID
+        )
+          return context.ENVIRONMENT_SID;
 
+        const service_sid = await getParam(context, "SERVICE_SID");
+        if (service_sid === null) {
+          return null; // service not yet deployed
+        }
         const environments = await client.serverless
           .services(service_sid)
-          .environments.list({limit : 1});
+          .environments.list({ limit: 1 });
 
         return environments.length > 0 ? environments[0].sid : null;
       }
 
-      case 'ENVIRONMENT_DOMAIN': {
-        const service_sid = await getParam(context, 'SERVICE_SID');
+      case "API_KEY": {
+        // value set in .env takes precedence
+        if (context.API_KEY) return context.API_KEY;
+
+        const apikeys = await client.keys.list();
+        let apikey = apikeys.find(
+          (k) => k.friendlyName === context.APPLICATION_NAME
+        );
+        if (apikey) {
+          await setParam(context, key, apikey.sid);
+          return apikey.sid;
+        }
+
+        console.log("API Key not found so creating a new API Key...");
+        await client.newKeys
+          .create({ friendlyName: context.APPLICATION_NAME })
+          .then((result) => {
+            apikey = result;
+          })
+          .catch((err) => {
+            throw new Error("Unable to create a API Key!!! ABORTING!!!");
+          });
+
+        await setParam(context, key, apikey.sid);
+        await setParam(context, "API_SECRET", apikey.secret);
+        context.API_SECRET = apikey.secret;
+
+        return apikey.sid;
+      }
+
+      case "API_SECRET": {
+        // value set in .env takes precedence
+        if (context.API_SECRET) return context.API_SECRET;
+
+        await getParam(context, "API_KEY");
+
+        return context.API_SECRET;
+      }
+
+      case "CHAT_ADDRESS_SID": {
+        if (context.CHAT_ADDRESS_SID) return context.CHAT_ADDRESS_SID;
+
+        const CHAT_ADDRESS_FNAME = await getParam(
+          context,
+          "CHAT_ADDRESS_FNAME"
+        );
+
+        const addrSid = await client.conversations.addressConfigurations
+          .list({ limit: 20 })
+          .then((addresses) => {
+            const chatAddress = addresses.find(
+              (addr) => addr.friendlyName === CHAT_ADDRESS_FNAME
+            );
+            if (!chatAddress)
+              throw new Error(
+                `Could not find address with friendlyName ${CHAT_ADDRESS_FNAME}`
+              );
+            return chatAddress.sid;
+          });
+
+        await setParam(context, "CHAT_ADDRESS_SID", addrSid);
+        return addrSid;
+      }
+
+      case "CONVERSATIONS_SERVICE_SID": {
+        if (context.CONVERSATIONS_SERVICE_SID) {
+          return context.CONVERSATIONS_SERVICE_SID;
+        }
+
+        const services = await client.conversations.services.list();
+        let service = services.find(
+          (s) => s.friendlyName === context.FLEX_CHAT_SERVICE_FNAME
+        );
+        if (!service) {
+          console.log(
+            `Conversations Service not found so creating a new Converasations service friendlyName=${context.FLEX_CHAT_SERVICE_FNAME}`
+          );
+          service = await client.conversations.services.create({
+            friendlyName: context.FLEX_CHAT_SERVICE_FNAME,
+          });
+          // Now set the new service to be the default for the account (required by Frontline)
+          const configuration = await client.conversations
+            .configuration()
+            .update({ defaultChatServiceSid: service.sid });
+
+          throw new Error(
+            "Unable to create a Twilio Conversations Service!!! ABORTING!!!"
+          );
+        } else {
+          await setParam(context, "CONVERSATIONS_SERVICE_SID", service.sid);
+          return service.sid;
+        }
+      }
+
+      case "ENVIRONMENT_DOMAIN": {
+        const service_sid = await getParam(context, "SERVICE_SID");
         if (service_sid === null) return null; // service not yet deployed
 
         const environments = await client.serverless
           .services(service_sid)
-          .environments.list({limit : 1});
+          .environments.list({ limit: 1 });
 
         return environments.length > 0 ? environments[0].domainName : null;
       }
 
-      case 'FUNCTION_SID':
-      {
-        assert(context.FUNCTION_FNAME, "undefined .env environment variable FUNCTION_FNAME!!!");
+      case "FUNCTION_SID": {
+        assert(
+          context.FUNCTION_FNAME,
+          "undefined .env environment variable FUNCTION_FNAME!!!"
+        );
 
-        const service_sid = await getParam(context, 'SERVICE_SID');
+        const service_sid = await getParam(context, "SERVICE_SID");
         if (service_sid === null) return null; // service not yet deployed
 
-        const functions = await client.serverless.services(service_sid).functions.list();
-        const fn = functions.find(f => f.friendlyName.includes(context.FUNCTION_FNAME));
-        if (! fn) throw new Error(`no service function named ${context.FUNCTION_FNAME}`)
+        const functions = await client.serverless
+          .services(service_sid)
+          .functions.list();
+        const fn = functions.find((f) =>
+          f.friendlyName.includes(context.FUNCTION_FNAME)
+        );
+        if (!fn)
+          throw new Error(
+            `no service function named ${context.FUNCTION_FNAME}`
+          );
 
         await setParam(context, key, fn.sid);
         return fn.sid;
       }
 
-      case 'VERIFY_SID':
-      {
+      case "VERIFY_SID": {
         const services = await client.verify.services.list();
-        let service = services.find((s) => s.friendlyName === context.APPLICATION_NAME);
+        let service = services.find(
+          (s) => s.friendlyName === context.APPLICATION_NAME
+        );
         if (!service) {
-          console.log(`Verify service not found so creating a new verify service friendlyName=${context.APPLICATION_NAME}`);
+          console.log(
+            `Verify service not found so creating a new verify service friendlyName=${context.APPLICATION_NAME}`
+          );
           service = await client.verify.services.create({
             friendlyName: context.APPLICATION_NAME,
           });
         }
-        if (!service) throw new Error("Unable to create a Twilio Verify Service!!! ABORTING!!!");
+        if (!service)
+          throw new Error(
+            "Unable to create a Twilio Verify Service!!! ABORTING!!!"
+          );
 
         await setParam(context, key, service.sid);
         return service.sid;
       }
 
-      case 'FLEX_SID':
-      {
+      case "FLEX_SID": {
         const flex = await client.flexApi.v1.configuration().fetch();
-        assert(flex, `Flex instance not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
+        assert(
+          flex,
+          `Flex instance not found in Twilio account: ${context.ACCOUNT_SID}!!!`
+        );
 
         await setParam(context, key, flex.flexServiceInstanceSid);
         return flex.flexServiceInstanceSid;
       }
 
-      case 'FLEX_CHAT_SERVICE_SID':
-      {
-        assert(context.FLEX_CHAT_SERVICE_FNAME, "undefined .env environment variable FLEX_CHAT_SERVICE_FNAME!!!");
+      case "FLEX_CHAT_SERVICE_SID": {
+        assert(
+          context.FLEX_CHAT_SERVICE_FNAME,
+          "undefined .env environment variable FLEX_CHAT_SERVICE_FNAME!!!"
+        );
 
         const services = await client.chat.v2.services.list();
-        const service = services.find(f => f.friendlyName === context.FLEX_CHAT_SERVICE_FNAME);
-        assert(service, `Flex chat service not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
+        const service = services.find(
+          (f) => f.friendlyName === context.FLEX_CHAT_SERVICE_FNAME
+        );
+        assert(
+          service,
+          `Flex chat service not found in Twilio account: ${context.ACCOUNT_SID}!!!`
+        );
 
         await setParam(context, key, service.sid);
         return service.sid;
       }
 
-      case 'FLEX_WEB_FLOW_SID':
-      {
-        const FLEX_WEB_FLOW_FNAME = 'Flex Web Channel Flow';
+      case "FLEX_WEB_FLOW_SID": {
+        const FLEX_WEB_FLOW_FNAME = "Flex Web Channel Flow";
 
         // look for existing legacy address
         const flows = await client.flexApi.v1.flexFlow.list();
-        const flow = flows.find(f => f.channelType === 'web');
+        const flow = flows.find((f) => f.channelType === "web");
         if (flow) return flow.sid;
 
         console.log("No Legacy Address for web found.");
 
         // fetch studio flow for legacy address
-        let studio_flow_sid = await getParam(context, 'STUDIO_FLOW_SID');
+        let studio_flow_sid = await getParam(context, "STUDIO_FLOW_SID");
         if (!studio_flow_sid) {
           const sflows = await client.studio.flows.list();
-          const sflow = sflows.find(f => f.friendlyName === 'Chat Flow');
-          assert(sflow, `Flex WebChat Studio flow not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
+          const sflow = sflows.find((f) => f.friendlyName === "Chat Flow");
+          assert(
+            sflow,
+            `Flex WebChat Studio flow not found in Twilio account: ${context.ACCOUNT_SID}!!!`
+          );
           studio_flow_sid = sflow.sid;
         }
-        const chat_service_sid = await getParam(context, 'FLEX_CHAT_SERVICE_SID');
-        console.log(`Create Legacy Address for web with friendlyName=${FLEX_WEB_FLOW_FNAME}.`);
+        const chat_service_sid = await getParam(
+          context,
+          "FLEX_CHAT_SERVICE_SID"
+        );
+        console.log(
+          `Create Legacy Address for web with friendlyName=${FLEX_WEB_FLOW_FNAME}.`
+        );
 
         const newFlow = await client.flexApi.v1.flexFlow.create({
           friendlyName: FLEX_WEB_FLOW_FNAME,
           chatServiceSid: chat_service_sid,
-          channelType: 'web',
+          channelType: "web",
           enabled: true,
-          integrationType: 'studio',
-          'integration.flowSid': studio_flow_sid,
+          integrationType: "studio",
+          "integration.flowSid": studio_flow_sid,
           janitorEnabled: true,
         });
-        if (!newFlow) throw new Error("Unable to create a Flex Legacy Address for web!!! ABORTING!!!");
+        if (!newFlow)
+          throw new Error(
+            "Unable to create a Flex Legacy Address for web!!! ABORTING!!!"
+          );
 
         return newFlow.sid;
       }
 
-      case 'FLEX_SMS_FLOW_SID':
-      {
-        const FLEX_SMS_FLOW_FNAME = 'Flex Messaging Channel Flow';
+      case "FLEX_SMS_FLOW_SID": {
+        const FLEX_SMS_FLOW_FNAME = "Flex Messaging Channel Flow";
 
         // if not found, look for existing conversation address (2.0)
-        const addresses = await client.conversations.addressConfigurations.list();
-        const address = addresses.find(a => (a.type === 'sms' && a.friendlyName === FLEX_SMS_FLOW_FNAME));
+        const addresses =
+          await client.conversations.addressConfigurations.list();
+        const address = addresses.find(
+          (a) => a.type === "sms" && a.friendlyName === FLEX_SMS_FLOW_FNAME
+        );
 
         // if found, return conversation sid
         if (address) {
-          console.log(`Remove Conversation Address friendlyName=${FLEX_SMS_FLOW_FNAME}`);
+          console.log(
+            `Remove Conversation Address friendlyName=${FLEX_SMS_FLOW_FNAME}`
+          );
           return address.sid;
         }
-        
-        throw new Error("Unable to find sms conversations address!!! ABORTING!!!");
+
+        throw new Error(
+          "Unable to find sms conversations address!!! ABORTING!!!"
+        );
       }
 
-      case 'FLEX_WORKSPACE_SID':
-      {
+      case "FLEX_WORKSPACE_SID": {
         // TODO: Note that Flex messaging 'legacy addresses' will be EOL end of 2023 July
         const flex = await client.flexApi.v1.configuration().fetch();
-        assert(flex, `Flex instance not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
+        assert(
+          flex,
+          `Flex instance not found in Twilio account: ${context.ACCOUNT_SID}!!!`
+        );
 
-        assert(flex.taskrouterWorkspaceSid, `Taskrouter Workspace Sid not found in Twilio account: ${context.ACCOUNT_SID}!!!`);
+        assert(
+          flex.taskrouterWorkspaceSid,
+          `Taskrouter Workspace Sid not found in Twilio account: ${context.ACCOUNT_SID}!!!`
+        );
         await setParam(context, key, flex.taskrouterWorkspaceSid);
         return flex.taskrouterWorkspaceSid;
       }
 
-      case 'FLEX_WORKFLOW_SID':
-      {
-        const flex_workspace_sid = await getParam(context, 'FLEX_WORKSPACE_SID');
-        const flows = await client.taskrouter.v1.workspaces(flex_workspace_sid)
+      case "FLEX_WORKFLOW_SID": {
+        const flex_workspace_sid = await getParam(
+          context,
+          "FLEX_WORKSPACE_SID"
+        );
+        const flows = await client.taskrouter.v1
+          .workspaces(flex_workspace_sid)
           .workflows.list();
-        const flow = flows.find(f => f.friendlyName === context.FLEX_WORKFLOW_FNAME);
-        assert(flow, `Unable to find flex workspace workflow named ${context.FLEX_WORKFLOW_FNAME}`);
+        const flow = flows.find(
+          (f) => f.friendlyName === context.FLEX_WORKFLOW_FNAME
+        );
+        assert(
+          flow,
+          `Unable to find flex workspace workflow named ${context.FLEX_WORKFLOW_FNAME}`
+        );
 
         await setParam(context, key, flow.sid);
         return flow.sid;
       }
 
-      case 'FLEX_TASK_CHANNEL_SID':
-      {
-        const flex_workspace_sid = await getParam(context, 'FLEX_WORKSPACE_SID');
-        const channels = await client.taskrouter.v1.workspaces(flex_workspace_sid)
+      case "FLEX_TASK_CHANNEL_SID": {
+        const flex_workspace_sid = await getParam(
+          context,
+          "FLEX_WORKSPACE_SID"
+        );
+        const channels = await client.taskrouter.v1
+          .workspaces(flex_workspace_sid)
           .taskChannels.list();
-        const channel = channels.find(c => c.uniqueName === context.FLEX_TASK_CHANNEL_UNAME);
-        assert(channel, `Unable to find flex workspace task channel for ${context.FLEX_TASK_CHANNEL_UNAME}`);
+        const channel = channels.find(
+          (c) => c.uniqueName === context.FLEX_TASK_CHANNEL_UNAME
+        );
+        assert(
+          channel,
+          `Unable to find flex workspace task channel for ${context.FLEX_TASK_CHANNEL_UNAME}`
+        );
 
         await setParam(context, key, channel.sid);
         return channel.sid;
       }
 
-      case 'STUDIO_FLOW_SID':
-      {
-        const STUDIO_FLOW_NAME = await getParam(context, 'STUDIO_FLOW_NAME');
+      case "STUDIO_FLOW_SID": {
+        const STUDIO_FLOW_NAME = await getParam(context, "STUDIO_FLOW_NAME");
         const flows = await client.studio.flows.list();
-        const flow = flows.find(f => f.friendlyName === STUDIO_FLOW_NAME);
+        const flow = flows.find((f) => f.friendlyName === STUDIO_FLOW_NAME);
 
         if (flow) await setParam(context, key, flow.sid);
         return flow ? flow.sid : null;
@@ -240,15 +411,15 @@ async function getParam(context, key) {
   }
 }
 
-
 /* --------------------------------------------------------------------------------
  * sets environment variable on deployed service, does nothing on localhost
  * --------------------------------------------------------------------------------
  */
 async function setParam(context, key, value) {
-  if (context.DOMAIN_NAME.startsWith('localhost:')) return null; // do nothing on localhost
-  if (context.service_sid) return null; // do nothing is service is not deployed
-  const environment_sid = await getParam(context, 'ENVIRONMENT_SID');
+  if (context.DOMAIN_NAME.startsWith("localhost:")) return null; // do nothing on localhost
+  const service_sid = await getParam(context, "SERVICE_SID");
+  if (!service_sid) return null; // do nothing is service is not deployed
+  const environment_sid = await getParam(context, "ENVIRONMENT_SID");
 
   const client = context.getTwilioClient();
 
@@ -256,7 +427,7 @@ async function setParam(context, key, value) {
     .services(service_sid)
     .environments(environment_sid)
     .variables.list();
-  let variable = variables.find(v => v.key === key);
+  let variable = variables.find((v) => v.key === key);
 
   if (variable) {
     // update existing variable
@@ -265,23 +436,22 @@ async function setParam(context, key, value) {
       .environments(environment_sid)
       .variables(variable.sid)
       .update({ value })
-      .then((v) => console.log('setParam: updated variable', v.key));
+      .then((v) => console.log("setParam: updated variable", v.key));
   } else {
     // create new variable
     await client.serverless
       .services(service_sid)
       .environments(environment_sid)
       .variables.create({ key, value })
-      .then((v) => console.log('setParam: created variable', v.key));
+      .then((v) => console.log("setParam: created variable", v.key));
   }
 
   context[key] = value;
   return {
     key: key,
-    value: value
+    value: value,
   };
 }
-
 
 // --------------------------------------------------------------------------------
 module.exports = {
