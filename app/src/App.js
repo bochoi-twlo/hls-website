@@ -9,14 +9,14 @@ class App extends React.Component {
     super(props);
 
     // Alter the predefined Message
-    FlexWebChat.MessagingCanvas.defaultProps.predefinedMessage.authorName = 'Owl Health';
+    FlexWebChat.MessagingCanvas.defaultProps.predefinedMessage.authorName = 'Cloud City Healthcare';
     FlexWebChat.MessagingCanvas.defaultProps.predefinedMessage.body = ' 👋 Are you a new or existing patient?';
   
     // Alter the Welcome Message
-    FlexWebChat.MessageList.WelcomeMessage = 'Welcome to Owl Health, I hope you are having a wonderful day!, ';
+    FlexWebChat.MessageList.WelcomeMessage = 'Welcome to Cloud City Healthcare, I hope you are having a wonderful day!, ';
 
     // Chat Header Customizations
-    FlexWebChat.MainHeader.defaultProps.imageUrl = './images/LogoOwlSmall.png';
+    FlexWebChat.MainHeader.defaultProps.imageUrl = './images/healthcare-black-alpha-logo.svg';
     FlexWebChat.MainHeader.defaultProps.titleText = "Chat with us";
     FlexWebChat.MainHeader.defaultProps.showTitle = true;
 
