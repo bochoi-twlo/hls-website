@@ -135,7 +135,7 @@
         },
         "service": "{{trigger.message.InstanceSid}}",
         "channel": "{{trigger.message.ChannelSid}}",
-        "from": "Owl Health",
+        "from": "CCH",
         "body": "Please enter your date of birth (YYYY-mm-dd).",
         "timeout": "1800"
       }
@@ -298,7 +298,7 @@
         },
         "service": "{{trigger.message.InstanceSid}}",
         "channel": "{{trigger.message.ChannelSid}}",
-        "from": "Owl Health",
+        "from": "CCH",
         "to": "{{contact.channel.address}}",
         "body": "Hello! In order for us to assist you today, please answer a few questions."
       }
