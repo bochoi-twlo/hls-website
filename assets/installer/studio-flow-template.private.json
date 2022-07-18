@@ -135,7 +135,7 @@
         },
         "service": "{{trigger.message.InstanceSid}}",
         "channel": "{{trigger.message.ChannelSid}}",
-        "from": "CCH",
+        "from": "Cloud City Healthcare",
         "body": "Please enter your date of birth (YYYY-mm-dd).",
         "timeout": "1800"
       }
@@ -298,7 +298,7 @@
         },
         "service": "{{trigger.message.InstanceSid}}",
         "channel": "{{trigger.message.ChannelSid}}",
-        "from": "CCH",
+        "from": "Cloud City Healthcare",
         "to": "{{contact.channel.address}}",
         "body": "Hello! In order for us to assist you today, please answer a few questions."
       }
