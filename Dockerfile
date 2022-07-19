@@ -2,8 +2,11 @@
 # Dockerfile for local installer
 # --------------------------------------------------------------------------------
 FROM twilio/twilio-cli:3.4.2
+ARG GITHUB_SHA_ARG
+ENV GITHUB_SHA=$GITHUB_SHA_ARG
 
 RUN twilio plugins:install @twilio-labs/plugin-serverless
+
 
 # build app
 COPY app /app
