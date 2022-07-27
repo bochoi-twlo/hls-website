@@ -1,68 +1,82 @@
 # HLS Website
 
-##### Table of Contents
-- [Pre-requisites](#pre-requisites)
-- [Installation Guide](#install)
-- [User Guide](#use)
-- [Developer Notes](#developer)
+HLS Webiste is specifically designed to be used together with
+HLS Flex for Provider Solution Blueprint.
 
-<a name="pre-requisites"/>
+- [Installation](#installation)
+- [User Guide](#user-guide)
+- [Developer Notes](#developer-notes)
 
-## Pre-requisites
+---
+
+## Installation
+
+### Prerequisites
 
 The following prerequisites must be satisfied prior to installing the application.
 
-### Docker Desktop
+#### Provision Twilio Account
+You will need the following Twilio assets ready prior to installation:
+- **Twilio account**
+  - Create a Twilio account by signing up [here](https://www.twilio.com/try-twilio).
+  - *(You will use your login information to get started with the Quick Deploy installation on the app's CodeExchange page)*
+- **Twilio phone number**
+  - After provisioning your Twilio account, you will need to [purchase a phone number](https://www.twilio.com/console/phone-numbers/incoming) to use in the application.
+  - Make sure the phone number is SMS enabled
+  - *(This will be the number patients receive texts from)*
+
+#### Docker Desktop
 
 Install Docker desktop that includes docker compose CLI will be used to run the application installer locally on your machine.
 Goto [Docker Desktop](https://www.docker.com/products/docker-desktop) and install with default options.
 After installation make sure to start Docker desktop.
 
-### jq & xq
 
-```shell
-$ brew install jq           # install jq
-...
-$ jq --version              # confirm installation
-jq-1.6
-$ brew install python-yq    # install yq/xq
-...
-$ yq --version              # confirm installation
-yq 2.13.0
-```
+### Installation Steps
 
-
-<a name="install"/>
-
-## Installation Guide
+<em>(Installation of this application is supported on the latest versions of Chrome, Firefox, and Safari.
+Installation via Internet Explorer has not been officially tested
+and although issues are not expected, unforeseen problems may occur)</em>
 
 Please ensure that you do not have any running processes
 that is listening on port `3000`
 such as development servers or another HLS installer still running.
 
-#### Build Installer Docker Image
+
+#### Remove Docker Image
+
+First, to ensure installation using the latest docker image, execute the following in your terminal window
 
 ```shell
-docker build --tag hls-website-installer --no-cache https://github.com/bochoi-twlo/hls-website.git#main
+docker image rm twiliohls/hls-pam-installer
 ```
 
 If running on Apple Silicon (M1 chip), add `--platform linux/amd64` option.
 
+
 #### Run Installer Docker Container
 
-Replace `${TWILIO_ACCOUNT_SID}` and `${TWILIO_AUTH_TOKEN}` with that of your target Twilio account.
+Replace `${TWILIO_ACCOUNT_SID}` and `${TWILIO_AUTH_TOKEN}` with that of your target Twilio account
+and execute the following in your terminal window.
 
 ```shell
 docker run --name hls-website-installer --rm --publish 3000:3000  \
 --env ACCOUNT_SID=${TWILIO_ACCOUNT_SID} --env AUTH_TOKEN=${TWILIO_AUTH_TOKEN} \
---interactive --tty hls-website-installer
+--interactive --tty twiliohls/hls-website-installer
 ```
 
 If running on Apple Silicon (M1 chip), add `--platform linux/amd64` option.
 
+
 #### Open installer in browser
 
 Open http://localhost:3000/installer/index.html
+
+Fill in all required environment variables and/or change them to meet your needs.
+
+Click `Deploy` to install the application to your Twilio account
+and wait until installer indicates completion.
+
 
 #### Terminate installer
 
@@ -70,17 +84,15 @@ To terminate installer:
 - Enter Control-C in the terminal where `docker run ...` was executed
 - Stop the `hls-website-installer` docker container via the Docker Desktop
 
-
-<a name="use"/>
-
+---
 ## User Guide
 
-Not special instructions.
+This application is designed specifically to work with HLS Flex for Provider Solution Blueprint
+and cannot be used stand-alone.
 
 
+---
 
-<a name="developer"/>
-
-# Developer Notes
+## Developer Notes
 
 Run `make` to see available targets.

@@ -12,6 +12,8 @@
  * --------------------------------------------------------------------------------
  */
 const assert = require("assert");
+const path = require("path");
+const fs = require("fs");
 
 /* --------------------------------------------------------------------------------
  * is executing on localhost
@@ -32,14 +34,7 @@ function isLocalhost(context) {
  * --------------------------------------------------------------------------------
  */
 async function getParam(context, key) {
-  assert(
-    context.APPLICATION_NAME,
-    "undefined .env environment variable APPLICATION_NAME!!!"
-  );
-  assert(
-    context.CUSTOMER_NAME,
-    "undefined .env environment variable CUSTOMER_NAME!!!"
-  );
+  assert(context.APPLICATION_NAME, "undefined .env environment variable APPLICATION_NAME!!!");
 
   if (
     key !== "SERVICE_SID" && // avoid warning
@@ -53,38 +48,39 @@ async function getParam(context, key) {
   try {
     switch (key) {
       case "SERVICE_SID": {
-        // will throw error when running on localhost, so lookup by name if localhost
-        if (
-          !context.DOMAIN_NAME.startsWith("localhost:") &&
-          context.SERVICE_SID
-        )
-          return context.SERVICE_SID;
-
+        // return sid only if deployed; otherwise null
         const services = await client.serverless.services.list();
-        const service = services.find(
-          (s) => s.uniqueName === context.APPLICATION_NAME
-        );
+        const service = services.find(s => s.uniqueName === context.APPLICATION_NAME);
 
-        return service && service.sid ? service.sid : null;
+        return service ? service.sid : null;
+      }
+
+      case 'APPLICATION_VERSION':
+      {
+        const service_sid = await getParam(context, 'SERVICE_SID');
+        if (service_sid === null) return null; // service not yet deployed, therefore return 'null'
+
+        const environment_sid = await getParam(context, 'ENVIRONMENT_SID');
+        const variables = await client.serverless
+          .services(service_sid)
+          .environments(environment_sid)
+          .variables.list();
+        const variable = variables.find(v => v.key === 'APPLICATION_VERSION');
+
+        return variable ? variable.value : null;
       }
 
       case "ENVIRONMENT_SID": {
-        // will throw error when running on localhost, so lookup by name if localhost
-        if (
-          !context.DOMAIN_NAME.startsWith("localhost:") &&
-          context.ENVIRONMENT_SID
-        )
-          return context.ENVIRONMENT_SID;
-
+        // return sid only if deployed; otherwise null
         const service_sid = await getParam(context, "SERVICE_SID");
-        if (service_sid === null) {
-          return null; // service not yet deployed
-        }
+        if (service_sid === null) return null; // service not yet deployed
+
         const environments = await client.serverless
           .services(service_sid)
           .environments.list({ limit: 1 });
+        assert(environments && environments.length > 0, `error fetching environment for service_sid=${service_sid}!!!`);
 
-        return environments.length > 0 ? environments[0].sid : null;
+        return environments[0].sid;
       }
 
       case "API_KEY": {
@@ -416,7 +412,6 @@ async function getParam(context, key) {
  * --------------------------------------------------------------------------------
  */
 async function setParam(context, key, value) {
-  if (context.DOMAIN_NAME.startsWith("localhost:")) return null; // do nothing on localhost
   const service_sid = await getParam(context, "SERVICE_SID");
   if (!service_sid) return null; // do nothing is service is not deployed
   const environment_sid = await getParam(context, "ENVIRONMENT_SID");
@@ -453,8 +448,25 @@ async function setParam(context, key, value) {
   };
 }
 
+
+/* --------------------------------------------------------------------------------
+ * read version attribute from package.json
+ * --------------------------------------------------------------------------------
+ */
+async function fetchVersionToDeploy() {
+  const fs = require('fs');
+  const path = require('path');
+
+  const fpath = path.join(process.cwd(), 'package.json');
+  const payload = fs.readFileSync(fpath, 'utf8');
+  const json = JSON.parse(payload);
+
+  return json.version;
+}
+
 // --------------------------------------------------------------------------------
 module.exports = {
   getParam,
   setParam,
+  fetchVersionToDeploy,
 };

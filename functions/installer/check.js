@@ -14,7 +14,7 @@
  */
 const assert = require("assert");
 const { execSync } = require('child_process');
-const { getParam } = require(Runtime.getFunctions()['helpers'].path);
+const { getParam, fetchVersionToDeploy } = require(Runtime.getFunctions()['helpers'].path);
 
 exports.handler = async function (context, event, callback) {
   const THIS = 'check:';
@@ -24,14 +24,19 @@ exports.handler = async function (context, event, callback) {
   try {
 
     // ---------- check service ----------------------------------------
-    const service_sid        = await getParam(context, 'SERVICE_SID');
-    const studio_flow_sid    = await getParam(context, 'STUDIO_FLOW_SID');
-    const environment_domain = service_sid ? await getParam(context, 'ENVIRONMENT_DOMAIN') : null;
-    const application_url    = service_sid ? `https:/${environment_domain}/index.html` : null;
-    const administration_url = service_sid ? `https:/${environment_domain}/administration.html` : null;
+    const service_sid         = await getParam(context, 'SERVICE_SID');
+    const application_version = await getParam(context, 'APPLICATION_VERSION');
+    const studio_flow_sid     = await getParam(context, 'STUDIO_FLOW_SID');
+    const environment_domain  = service_sid ? await getParam(context, 'ENVIRONMENT_DOMAIN') : null;
+    const application_url     = service_sid ? `https:/${environment_domain}/index.html` : null;
+    const administration_url  = service_sid ? `https:/${environment_domain}/administration.html` : null;
 
     const response = {
       deploy_state: (service_sid && studio_flow_sid) ? 'DEPLOYED' : 'NOT-DEPLOYED',
+      version: {
+        deployed : application_version,
+        to_deploy: await fetchVersionToDeploy(),
+      },
       service_sid: service_sid,
       studio_flow_sid: studio_flow_sid,
       application_url: application_url,
