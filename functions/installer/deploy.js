@@ -11,11 +11,9 @@
  * --------------------------------------------------------------------------------
  */
 const assert = require("assert");
-const { getParam } = require(Runtime.getFunctions()["helpers"].path);
+const { getParam, setParam, fetchVersionToDeploy } = require(Runtime.getFunctions()["helpers"].path);
 const { TwilioServerlessApiClient } = require("@twilio-labs/serverless-api");
-const {
-  getListOfFunctionsAndAssets,
-} = require("@twilio-labs/serverless-api/dist/utils/fs");
+const { getListOfFunctionsAndAssets } = require("@twilio-labs/serverless-api/dist/utils/fs");
 const fs = require("fs");
 const { execSync } = require("child_process");
 
@@ -37,10 +35,7 @@ exports.handler = async function (context, event, callback) {
     const env = event.configuration;
     console.log(THIS, "configuration:", env);
 
-    console.log(
-      THIS,
-      `Deploying (${event.action}) Twilio service ... ${application_name}`
-    );
+    console.log(THIS, `Deploying (${event.action}) Twilio service ... ${application_name}`);
 
     switch (event.action) {
       case "DEPLOY":
@@ -48,6 +43,33 @@ exports.handler = async function (context, event, callback) {
         {
           // ---------- provision dependent resources
           await provisionDependentResources(context);
+
+          // ---------- build react app
+          console.log(THIS,'app ... npm install');
+          execSync('npm install',
+            {
+              cwd: "app",
+              env: {
+                PATH: process.env.PATH,
+              },
+              stdio: "inherit",
+            });
+
+          console.log(THIS, 'app ... npm run build');
+          execSync('npm run build',
+            {
+              cwd: "app",
+              env: {
+                PATH: process.env.PATH,
+              },
+              stdio: "inherit",
+            });
+
+          console.log(THIS, 'app ... copy build files into assets');
+          execSync('cp -r app/build/* assets',
+            {
+              stdio: "inherit",
+            });
 
           // ---------- deploy serverless service
           const service_sid = await deployService(context, env);
@@ -65,7 +87,10 @@ exports.handler = async function (context, event, callback) {
           // ---------- Changes the default Flex Conversations address with type "Chat" to use studio flow, removes legacy addresses
           await configureConversationsChatAddress(context);
 
-          console.log(THIS, `Completed deployment of ${application_name}`);
+          const version_to_deploy = await fetchVersionToDeploy();
+          await setParam(context, 'APPLICATION_VERSION', version_to_deploy);
+          console.log(THIS, `Completed deployment of ${application_name}:${version_to_deploy}`);
+
           const response = {
             status: event.action,
             deployables: [
