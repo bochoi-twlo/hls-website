@@ -15,7 +15,6 @@ const { getParam, setParam, fetchVersionToDeploy } = require(Runtime.getFunction
 const { TwilioServerlessApiClient } = require("@twilio-labs/serverless-api");
 const { getListOfFunctionsAndAssets } = require("@twilio-labs/serverless-api/dist/utils/fs");
 const fs = require("fs");
-const { execSync } = require("child_process");
 
 exports.handler = async function (context, event, callback) {
   const THIS = "deploy";
@@ -43,33 +42,6 @@ exports.handler = async function (context, event, callback) {
         {
           // ---------- provision dependent resources
           await provisionDependentResources(context);
-
-          // ---------- build react app
-          console.log(THIS,'app ... npm install');
-          execSync('npm install',
-            {
-              cwd: "app",
-              env: {
-                PATH: process.env.PATH,
-              },
-              stdio: "inherit",
-            });
-
-          console.log(THIS, 'app ... npm run build');
-          execSync('npm run build',
-            {
-              cwd: "app",
-              env: {
-                PATH: process.env.PATH,
-              },
-              stdio: "inherit",
-            });
-
-          console.log(THIS, 'app ... copy build files into assets');
-          execSync('cp -r app/build/* assets',
-            {
-              stdio: "inherit",
-            });
 
           // ---------- deploy serverless service
           const service_sid = await deployService(context, env);
