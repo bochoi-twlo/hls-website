@@ -153,7 +153,9 @@ async function configureConversationsChatAddress(context) {
  * --------------------------------------------------------------------------------
  */
 async function provisionDependentResources(context) {
-  await getParam(context, "VERIFY_SID");
+  await getParam(context, 'VERIFY_SID');
+  await getParam(context, 'API_KEY');
+  await getParam(context, 'API_SECRET');
 }
 
 /* --------------------------------------------------------------------------------
