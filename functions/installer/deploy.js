@@ -40,9 +40,6 @@ exports.handler = async function (context, event, callback) {
       case "DEPLOY":
       case "REDEPLOY":
         {
-          // ---------- provision dependent resources
-          await provisionDependentResources(context);
-
           // ---------- deploy serverless service
           const service_sid = await deployService(context, env);
           console.log(THIS, `Deployed: ${service_sid}`);
@@ -51,6 +48,9 @@ exports.handler = async function (context, event, callback) {
             .services(service_sid)
             .update({ uiEditable: true });
           console.log(THIS, "Make Twilio service editable ...");
+
+          // ---------- provision dependent resources
+          await provisionDependentResources(context);
 
           // ---------- deploy studio flow
           const studio_flow_sid = await deployStudioFlow(context);
