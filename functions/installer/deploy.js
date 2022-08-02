@@ -19,16 +19,10 @@ const fs = require("fs");
 exports.handler = async function (context, event, callback) {
   const THIS = "deploy";
 
-  assert(
-    context.DOMAIN_NAME.startsWith("localhost:"),
-    `Can only run on localhost!!!`
-  );
+  assert(context.DOMAIN_NAME.startsWith("localhost:"), `Can only run on localhost!!!`);
   console.time(THIS);
   try {
-    assert(
-      event.configuration.APPLICATION_NAME,
-      "missing APPLICATION_NAME variable!!!"
-    );
+    assert(event.configuration.APPLICATION_NAME, "missing APPLICATION_NAME variable!!!");
     assert(event.action, "missing event.action variable!!!");
     const application_name = event.configuration.APPLICATION_NAME;
     const env = event.configuration;
@@ -155,7 +149,6 @@ async function configureConversationsChatAddress(context) {
 async function provisionDependentResources(context) {
   await getParam(context, 'VERIFY_SID');
   await getParam(context, 'API_KEY');
-  await getParam(context, 'API_SECRET');
 }
 
 /* --------------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const Twilio = require("twilio");
+const { getParam } = require(Runtime.getFunctions()['helpers'].path);
 const { TOKEN_TTL_IN_SECONDS } = require(Runtime.getFunctions()['constants'].path);
 const { createToken } = require(Runtime.getFunctions()['helpers/createToken'].path);
 
@@ -21,10 +22,11 @@ exports.handler = async function (context, event, callback) {
   let providedIdentity;
 
   try {
+    const api_secret = await getParam(context, 'API_SECRET');
     const validatedToken = await new Promise((res, rej) =>
       jwt.verify(
         request.body.token,
-        context.API_SECRET,
+        api_secret,
         {},
         (err, decoded) => {
           if (err) return rej(err);
