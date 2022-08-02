@@ -14,6 +14,7 @@
 const assert = require("assert");
 const path = require("path");
 const fs = require("fs");
+const {api} = require("@twilio-labs/serverless-api");
 
 /* --------------------------------------------------------------------------------
  * is executing on localhost
@@ -26,33 +27,42 @@ function isLocalhost(context) {
 /* --------------------------------------------------------------------------------
  * retrieve environment variable value
  *
+ * values in 'context' will pre-cendence if value is present.
+ * if running inside deployed service, values will be from environment variables
+ * if running inside localhost, values will be from .env.localhost file
+ *
  * parameters:
  * - context: Twilio Runtime context
+ * - key: key of variable
  *
  * returns
  * - value of specified environment variable. Note that SERVICE_SID & ENVIRONMENT_SID will return 'null' if not yet deployed
  * --------------------------------------------------------------------------------
  */
 async function getParam(context, key) {
-  assert(context.APPLICATION_NAME, "undefined .env environment variable APPLICATION_NAME!!!");
+  assert(context.APPLICATION_NAME, "undefined .env environment key APPLICATION_NAME!!!");
 
-  if (
-    key !== "SERVICE_SID" && // avoid warning
-    key !== "ENVIRONMENT_SID" && // avoid warning
-    context[key]
-  ) {
-    return context[key]; // first return context non-null context value
+  // first, return context value if present
+  if (! context.DOMAIN_NAME.startsWith("localhost:") && context[key]) {
+    return context[key];
+  } else if (
+    key !== 'SERVICE_SID' &&
+    key !== 'ENVIRONMENT_SID' &&
+    context[key]) {
+    return context[key];
   }
 
   const client = context.getTwilioClient();
   try {
     switch (key) {
-      case "SERVICE_SID": {
-        // return sid only if deployed; otherwise null
+      case "SERVICE_SID":
+      {
         const services = await client.serverless.services.list();
         const service = services.find(s => s.uniqueName === context.APPLICATION_NAME);
 
-        return service ? service.sid : null;
+        if (service) context.SERVICE_SID = service.sid; // request persistence only
+
+        return service ? service.sid : null; // service not yet deployed, therefore return 'null'
       }
 
       case 'APPLICATION_VERSION':
@@ -70,31 +80,45 @@ async function getParam(context, key) {
         return variable ? variable.value : null;
       }
 
-      case "ENVIRONMENT_SID": {
-        // return sid only if deployed; otherwise null
+      case "ENVIRONMENT_SID":
+      {
         const service_sid = await getParam(context, "SERVICE_SID");
-        if (service_sid === null) return null; // service not yet deployed
+        if (service_sid === null) return null;  // service not yet deployed, therefore return 'null'
 
         const environments = await client.serverless
           .services(service_sid)
           .environments.list({ limit: 1 });
         assert(environments && environments.length > 0, `error fetching environment for service_sid=${service_sid}!!!`);
 
+        context.ENVIRONMENT_SID = environments[0].sid; // request persistence only
+
         return environments[0].sid;
       }
 
-      case "API_KEY": {
-        // value set in .env takes precedence
-        if (context.API_KEY) return context.API_KEY;
+      case "ENVIRONMENT_DOMAIN":
+      {
+        const service_sid = await getParam(context, "SERVICE_SID");
+        if (service_sid === null) return null;  // service not yet deployed, therefore return 'null'
 
-        const apikeys = await client.keys.list();
-        let apikey = apikeys.find(
-          (k) => k.friendlyName === context.APPLICATION_NAME
-        );
-        if (apikey) {
-          await setParam(context, key, apikey.sid);
-          return apikey.sid;
-        }
+        const environments = await client.serverless
+          .services(service_sid)
+          .environments.list({ limit: 1 });
+        assert(environments && environments.length > 0, `error fetching environment for service_sid=${service_sid}!!!`);
+
+        context.ENVIRONMENT_DOMAIN = environments[0].domainName; // request persistence only
+
+        return environments[0].domainName;
+      }
+
+      case "API_KEY":
+      {
+        // const apikeys = await client.keys.list();
+        // let apikey = apikeys.find(
+        //   (k) => k.friendlyName === context.APPLICATION_NAME
+        // );
+        // if (apikey) {
+        //   return apikey.sid;
+        // }
 
         console.log("API Key not found so creating a new API Key...");
         await client.newKeys
@@ -107,38 +131,33 @@ async function getParam(context, key) {
           });
 
         await setParam(context, key, apikey.sid);
-        await setParam(context, "API_SECRET", apikey.secret);
-        context.API_SECRET = apikey.secret;
+        await setParam(context, "API_SECRET", apikey.secret); // save secret at key creation time
+        context.API_SECRET = apikey.secret; // set context for in-session use
 
         return apikey.sid;
       }
 
-      case "API_SECRET": {
-        // value set in .env takes precedence
-        if (context.API_SECRET) return context.API_SECRET;
-
+      case "API_SECRET":
+      {
+        // ensure API_KEY is provisioned & context.API_SECRET set
         await getParam(context, "API_KEY");
 
         return context.API_SECRET;
       }
 
-      case "CHAT_ADDRESS_SID": {
-        if (context.CHAT_ADDRESS_SID) return context.CHAT_ADDRESS_SID;
-
-        const CHAT_ADDRESS_FNAME = await getParam(
-          context,
-          "CHAT_ADDRESS_FNAME"
-        );
+      case "CHAT_ADDRESS_SID":
+      {
+        const fname = await getParam(context, "CHAT_ADDRESS_FNAME");
 
         const addrSid = await client.conversations.addressConfigurations
           .list({ limit: 20 })
           .then((addresses) => {
             const chatAddress = addresses.find(
-              (addr) => addr.friendlyName === CHAT_ADDRESS_FNAME
+              (addr) => addr.friendlyName === fname
             );
             if (!chatAddress)
               throw new Error(
-                `Could not find address with friendlyName ${CHAT_ADDRESS_FNAME}`
+                `Could not find address with friendlyName ${fname}`
               );
             return chatAddress.sid;
           });
@@ -147,19 +166,14 @@ async function getParam(context, key) {
         return addrSid;
       }
 
-      case "CONVERSATIONS_SERVICE_SID": {
-        if (context.CONVERSATIONS_SERVICE_SID) {
-          return context.CONVERSATIONS_SERVICE_SID;
-        }
-
+      case "CONVERSATIONS_SERVICE_SID":
+      {
         const services = await client.conversations.services.list();
         let service = services.find(
           (s) => s.friendlyName === context.FLEX_CHAT_SERVICE_FNAME
         );
         if (!service) {
-          console.log(
-            `Conversations Service not found so creating a new Converasations service friendlyName=${context.FLEX_CHAT_SERVICE_FNAME}`
-          );
+          console.log(`Conversations Service not found so creating a new Converasations service friendlyName=${context.FLEX_CHAT_SERVICE_FNAME}`);
           service = await client.conversations.services.create({
             friendlyName: context.FLEX_CHAT_SERVICE_FNAME,
           });
@@ -177,22 +191,9 @@ async function getParam(context, key) {
         }
       }
 
-      case "ENVIRONMENT_DOMAIN": {
-        const service_sid = await getParam(context, "SERVICE_SID");
-        if (service_sid === null) return null; // service not yet deployed
-
-        const environments = await client.serverless
-          .services(service_sid)
-          .environments.list({ limit: 1 });
-
-        return environments.length > 0 ? environments[0].domainName : null;
-      }
-
-      case "FUNCTION_SID": {
-        assert(
-          context.FUNCTION_FNAME,
-          "undefined .env environment variable FUNCTION_FNAME!!!"
-        );
+      case "FUNCTION_SID":
+      {
+        assert(context.FUNCTION_FNAME, "undefined .env environment variable FUNCTION_FNAME!!!");
 
         const service_sid = await getParam(context, "SERVICE_SID");
         if (service_sid === null) return null; // service not yet deployed
@@ -212,7 +213,8 @@ async function getParam(context, key) {
         return fn.sid;
       }
 
-      case "VERIFY_SID": {
+      case "VERIFY_SID":
+      {
         const services = await client.verify.services.list();
         let service = services.find(
           (s) => s.friendlyName === context.APPLICATION_NAME
@@ -234,7 +236,8 @@ async function getParam(context, key) {
         return service.sid;
       }
 
-      case "FLEX_SID": {
+      case "FLEX_SID":
+      {
         const flex = await client.flexApi.v1.configuration().fetch();
         assert(
           flex,
@@ -245,7 +248,8 @@ async function getParam(context, key) {
         return flex.flexServiceInstanceSid;
       }
 
-      case "FLEX_CHAT_SERVICE_SID": {
+      case "FLEX_CHAT_SERVICE_SID":
+      {
         assert(
           context.FLEX_CHAT_SERVICE_FNAME,
           "undefined .env environment variable FLEX_CHAT_SERVICE_FNAME!!!"
@@ -264,7 +268,8 @@ async function getParam(context, key) {
         return service.sid;
       }
 
-      case "FLEX_WEB_FLOW_SID": {
+      case "FLEX_WEB_FLOW_SID":
+      {
         const FLEX_WEB_FLOW_FNAME = "Flex Web Channel Flow";
 
         // look for existing legacy address
@@ -310,7 +315,8 @@ async function getParam(context, key) {
         return newFlow.sid;
       }
 
-      case "FLEX_SMS_FLOW_SID": {
+      case "FLEX_SMS_FLOW_SID":
+      {
         const FLEX_SMS_FLOW_FNAME = "Flex Messaging Channel Flow";
 
         // if not found, look for existing conversation address (2.0)
@@ -333,7 +339,8 @@ async function getParam(context, key) {
         );
       }
 
-      case "FLEX_WORKSPACE_SID": {
+      case "FLEX_WORKSPACE_SID":
+      {
         // TODO: Note that Flex messaging 'legacy addresses' will be EOL end of 2023 July
         const flex = await client.flexApi.v1.configuration().fetch();
         assert(
@@ -349,7 +356,8 @@ async function getParam(context, key) {
         return flex.taskrouterWorkspaceSid;
       }
 
-      case "FLEX_WORKFLOW_SID": {
+      case "FLEX_WORKFLOW_SID":
+      {
         const flex_workspace_sid = await getParam(
           context,
           "FLEX_WORKSPACE_SID"
@@ -369,7 +377,8 @@ async function getParam(context, key) {
         return flow.sid;
       }
 
-      case "FLEX_TASK_CHANNEL_SID": {
+      case "FLEX_TASK_CHANNEL_SID":
+      {
         const flex_workspace_sid = await getParam(
           context,
           "FLEX_WORKSPACE_SID"
@@ -389,7 +398,8 @@ async function getParam(context, key) {
         return channel.sid;
       }
 
-      case "STUDIO_FLOW_SID": {
+      case "STUDIO_FLOW_SID":
+      {
         const STUDIO_FLOW_NAME = await getParam(context, "STUDIO_FLOW_NAME");
         const flows = await client.studio.flows.list();
         const flow = flows.find((f) => f.friendlyName === STUDIO_FLOW_NAME);
